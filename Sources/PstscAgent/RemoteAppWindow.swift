@@ -164,12 +164,10 @@ final class RemoteContentView: NSView, NSTextInputClient {
     /// remote side never tells us where the text caret is.
     private var lastClickScreenPoint: NSPoint?
     private var cursorObserver: NSObjectProtocol?
-    /// Small layers holding only the pixels that changed, laid over the last full-window image.
-    private var patchLayers: [CALayer] = []
-    /// Size the full-window image was painted at; a window resize invalidates it.
-    private var baseSize = NSSize.zero
-    /// After this many patches, repaint the base and drop them (keeps layer count bounded).
-    private static let maxPatches = 32
+    /// Latest full-window image, drawn into the view's backing store so that only the damaged
+    /// region is re-composited instead of uploading the whole window to the GPU every frame.
+    private var frameImage: CGImage?
+    private var redrawWholeView = true
 
     /// RemoteApp windows: the view sits where the remote window is, so map through screen coordinates.
     static let screenMapper: PointMapper = { point, view in
@@ -183,8 +181,6 @@ final class RemoteContentView: NSView, NSTextInputClient {
         self.mapPoint = mapPoint
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.contentsGravity = scalesToFit ? .resize : .topLeft
-        layer?.isGeometryFlipped = true
         cursorObserver = NotificationCenter.default.addObserver(forName: .remoteCursorChanged,
                                                                 object: nil, queue: .main) { [weak self] _ in
             guard let self, let window = self.window else { return }
@@ -200,68 +196,51 @@ final class RemoteContentView: NSView, NSTextInputClient {
 
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override var wantsUpdateLayer: Bool { true }
 
     /// Paints the whole window (desktop-framebuffer windows and window resizes).
     func show(_ image: CGImage?) {
         guard let image else { return }
         let started = CACurrentMediaTime()
-        applyBase(image)
+        frameImage = image
+        needsDisplay = true
         PerfStats.shared.recordShow(CACurrentMediaTime() - started)
     }
 
-    /// Paints only the part of a GFX surface that changed since the last call. The full-window
-    /// image is uploaded once; afterwards each update is a small overlay layer, so the cost of a
-    /// keystroke or a scroll step no longer scales with the window size.
+    /// Paints a GFX surface. The window keeps its backing store from frame to frame, so marking
+    /// just the changed rectangle makes Core Animation re-composite only that part; the full
+    /// window image is still current for exposure redraws.
     func showSurface(_ store: FrameStore, crop: CGRect, alpha: Bool) {
         let started = CACurrentMediaTime()
         let dirty = store.takeDirty()
-        defer { PerfStats.shared.recordShow(CACurrentMediaTime() - started) }
+        guard let image = store.image(of: crop, alpha: alpha) else { return }
+        frameImage = image
 
-        if baseSize != bounds.size || layer?.contents == nil {
-            if let image = store.image(of: crop, alpha: alpha) { applyBase(image) }
-            return
-        }
-        let r = dirty.integral.intersection(crop)
-        guard !r.isEmpty, let image = store.image(of: r, alpha: alpha) else { return }
         let s = DisplayScale.value
-        let local = r.offsetBy(dx: -crop.minX, dy: -crop.minY)
-        let patch = CALayer()
-        patch.contents = image
-        patch.contentsScale = s
-        patch.contentsGravity = .topLeft
-        patch.isOpaque = !alpha
-        patch.frame = CGRect(x: local.minX / s, y: local.minY / s,
-                             width: local.width / s, height: local.height / s)
-
-        // Older patches completely covered by this one are dead weight.
-        patchLayers = patchLayers.filter { old in
-            if patch.frame.contains(old.frame) {
-                old.removeFromSuperlayer()
-                return false
-            }
-            return true
+        let r = dirty.integral.intersection(crop)
+        if redrawWholeView || r.isEmpty || r.width * r.height >= crop.width * crop.height * 0.5 {
+            redrawWholeView = false
+            needsDisplay = true
+        } else {
+            // Remote pixels count from the top; the view's own coordinates count from the bottom.
+            let local = r.offsetBy(dx: -crop.minX, dy: -crop.minY)
+            let width = local.width / s
+            let height = local.height / s
+            setNeedsDisplay(NSRect(x: local.minX / s, y: bounds.height - (local.minY + local.height) / s,
+                                   width: width, height: height))
         }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        layer?.addSublayer(patch)
-        CATransaction.commit()
-        patchLayers.append(patch)
-
-        if patchLayers.count > Self.maxPatches, let full = store.image(of: crop, alpha: alpha) {
-            applyBase(full)
-        }
+        PerfStats.shared.recordShow(CACurrentMediaTime() - started)
     }
 
-    private func applyBase(_ image: CGImage) {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        layer?.contentsScale = DisplayScale.value
-        layer?.contents = image
-        patchLayers.forEach { $0.removeFromSuperlayer() }
-        patchLayers.removeAll()
-        baseSize = bounds.size
-        CATransaction.commit()
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        redrawWholeView = true
+        needsDisplay = true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let image = frameImage, let ctx = NSGraphicsContext.current?.cgContext else { return }
+        ctx.interpolationQuality = .none
+        ctx.draw(image, in: bounds)
     }
 
     override func updateTrackingAreas() {
