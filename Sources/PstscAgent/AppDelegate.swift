@@ -52,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private lazy var programs = ProgramTracker(catalog: catalog, icons: appIcons)
     private let windowListMenu = NSMenu(title: L("창"))
     private let workspaceMenu = NSMenu(title: L("워크스페이스"))
+    private let appProfileMenu = NSMenu(title: L("앱별 최적화"))
     private var modeMenuItem: NSMenuItem?
     private var shareHomeItem: NSMenuItem?
     private var shareClipboardItem: NSMenuItem?
@@ -611,6 +612,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             manager.onTitleChanged = { [weak self] id, title in self?.programs.windowTitleChanged(id, title: title) }
             manager.onRemoved = { [weak self] id in self?.programs.windowRemoved(id) }
             manager.onPresenceChanged = { [weak self] id in self?.programs.presenceChanged(id) }
+            manager.profileKey = { [weak self] id in self?.programs.program(forWindow: id)?.key }
             windowManager = manager
         case .desktop:
             DisplayScale.value = screen.backingScaleFactor
@@ -978,6 +980,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         workspaceItem.submenu = workspaceMenu
         appMenu.addItem(.separator())
         appMenu.addItem(workspaceItem)
+        appProfileMenu.delegate = self
+        let profileItem = NSMenuItem(title: L("앱별 최적화"), action: nil, keyEquivalent: "")
+        profileItem.submenu = appProfileMenu
+        appMenu.addItem(profileItem)
 
         NSApp.mainMenu = main
     }
@@ -1023,6 +1029,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     @objc private func showRemoteResources() {
         runResourceReport(showResult: true)
+    }
+
+    // MARK: Per-program profiles
+
+    @objc private func setAppProfileMode(_ sender: NSMenuItem) {
+        guard let info = sender.representedObject as? [String: Any],
+              let key = info["key"] as? String,
+              let raw = info["mode"] as? Int,
+              let mode = AppProfile.RefreshMode(rawValue: raw) else { return }
+        AppProfile.setMode(mode, for: key)
+    }
+
+    @objc private func toggleAppProfilePinned(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+        let pinned = !AppProfile.isPinned(key)
+        AppProfile.setPinned(pinned, for: key)
+        // Apply the new default to windows already on screen, not just the next ones.
+        for window in Array(windowManager?.windows.values ?? [:].values) {
+            if programs.program(forWindow: window.remoteId)?.key == key {
+                window.setPinned(pinned)
+            }
+        }
+    }
+
+    @objc private func resetAppProfile(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String else { return }
+        AppProfile.reset(key)
+        for window in Array(windowManager?.windows.values ?? [:].values) {
+            if programs.program(forWindow: window.remoteId)?.key == key {
+                window.setPinned(false)
+            }
+        }
     }
 
     /// Feedback is read by the maintainer even when no remote PC is connected, so it is always available.
@@ -1178,6 +1216,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        if menu === appProfileMenu {
+            menu.removeAllItems()
+            let running = programs.programs.values
+                .filter { $0.windowIds.contains { windowManager?.isPresent($0) ?? false } }
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            if running.isEmpty {
+                let empty = NSMenuItem(title: L("지금 떠 있는 원격 앱이 없습니다"), action: nil, keyEquivalent: "")
+                empty.isEnabled = false
+                menu.addItem(empty)
+                return
+            }
+            for program in running {
+                let item = NSMenuItem(title: program.name, action: nil, keyEquivalent: "")
+                let sub = NSMenu(title: program.name)
+                let current = AppProfile.mode(for: program.key)
+                for mode in AppProfile.RefreshMode.allCases {
+                    let choice = NSMenuItem(title: mode.title, action: #selector(setAppProfileMode(_:)),
+                                            keyEquivalent: "")
+                    choice.target = self
+                    choice.representedObject = ["key": program.key, "mode": mode.rawValue]
+                    choice.state = mode == current ? .on : .off
+                    sub.addItem(choice)
+                }
+                sub.addItem(.separator())
+                let pin = NSMenuItem(title: L("열 때 항상 위에 두기"), action: #selector(toggleAppProfilePinned(_:)),
+                                     keyEquivalent: "")
+                pin.target = self
+                pin.representedObject = program.key
+                pin.state = AppProfile.isPinned(program.key) ? .on : .off
+                sub.addItem(pin)
+                let reset = NSMenuItem(title: L("기본값으로 되돌리기"), action: #selector(resetAppProfile(_:)),
+                                       keyEquivalent: "")
+                reset.target = self
+                reset.representedObject = program.key
+                sub.addItem(reset)
+                item.submenu = sub
+                menu.addItem(item)
+            }
+            return
+        }
         if menu === workspaceMenu {
             menu.removeAllItems()
             let save = menu.addItem(withTitle: L("워크스페이스 저장…"),

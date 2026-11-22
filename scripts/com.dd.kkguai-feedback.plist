@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.dd.kkguai-feedback</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>/Users/dd/hello/pstsc-src/scripts/feedback-hourly.sh</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>3600</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/dd</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/Users/dd/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/dd/.local/state/kkguai/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/dd/.local/state/kkguai/launchd.err.log</string>
+</dict>
+</plist>

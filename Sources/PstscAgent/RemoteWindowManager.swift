@@ -13,6 +13,8 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
     static let keepAliveTitle = "PstscKeepAlive"
     private var ignored = Set<UInt32>()
 
+    /// The program key for a remote window (exe or AppUserModelID), used for its AppProfile.
+    var profileKey: ((UInt32) -> String?)?
     /// A non-popup window appeared on the Mac for the first time (used to look up its program).
     var onFirstShown: ((RemoteAppWindow) -> Void)?
     var onTitleChanged: ((UInt32, String) -> Void)?
@@ -61,6 +63,9 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
         window.refresh(from: session)
         guard !window.isVisible else { return }
         let firstTime = !window.hasBeenShown
+        if firstTime, !info.isPopup, let key = profileKey?(info.id) {
+            window.setPinned(AppProfile.isPinned(key))
+        }
         if firstTime, !info.isPopup, let saved = layout.frame(for: info.title) {
             window.restoreFrame(saved)
         }
@@ -115,7 +120,7 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
             if windowIds.contains(window.remoteId) {
                 // The first surface update is what makes a window appear.
                 if window.isVisible {
-                    window.refresh(from: session)
+                    window.refresh(from: session, minimumInterval: paintInterval(for: window))
                 } else {
                     let started = CACurrentMediaTime()
                     present(window)
@@ -126,7 +131,7 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
                     // Windows with their own GFX surface only change when that surface changes;
                     // repainting them for every desktop update just uploads the same pixels again.
                     if session.surface(for: window.remoteId) == nil {
-                        window.refresh(from: session)
+                        window.refresh(from: session, minimumInterval: paintInterval(for: window))
                     }
                 } else if session.surface(for: window.remoteId) == nil && !window.hasFreshDesktopPixels
                             && !window.info.isPopup {
@@ -138,6 +143,13 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
                 }
             }
         }
+    }
+
+    /// Seconds between repaints for this window, from its program's profile. A program that is
+    /// not in the tracker yet falls back to its window title, so the setting still applies.
+    private func paintInterval(for window: RemoteAppWindow) -> TimeInterval {
+        let key = profileKey?(window.remoteId) ?? window.info.title
+        return AppProfile.interval(for: key, isFocused: window.isKeyWindow)
     }
 
     /// Whether Explorer runs as the shell in this session (needed for the Start menu).

@@ -1,5 +1,6 @@
 import AppKit
 import Carbon
+import QuartzCore
 import PstscRDP
 
 /// A borderless Mac window showing one remote window. Windows draws its own title bar,
@@ -22,6 +23,11 @@ final class RemoteAppWindow: NSWindow {
     var onFrameCommitted: ((RemoteAppWindow) -> Void)?
     /// Where the window was before it was expanded to fill the screen.
     private var frameBeforeZoom: NSRect?
+    /// Set by the per-program profile or the window menu; kept apart from `level` because the
+    /// server's window updates reset the level on every change.
+    private(set) var isPinned = false
+    private var lastPaint: CFTimeInterval = 0
+    private var deferredPaint: DispatchWorkItem?
 
     init(info: RemoteWindowInfo, session: RDPSession) {
         remoteId = info.id
@@ -52,7 +58,7 @@ final class RemoteAppWindow: NSWindow {
         if isLocallyMoving { return }
         self.info = info
         title = info.title
-        level = info.isPopup ? .popUpMenu : .normal
+        level = info.isPopup ? .popUpMenu : (isPinned ? .floating : .normal)
         hasShadow = !info.isLayered
         if let reported = reportedFrame {
             if info.frame == reported.frame || Date() > reported.until {
@@ -121,12 +127,37 @@ final class RemoteAppWindow: NSWindow {
     }
 
     /// Uses the window's own GFX surface when the server sends one, else the shared desktop framebuffer.
-    func refresh(from session: RDPSession) {
+    /// `minimumInterval` throttles programs that do not need every frame (see AppProfile). The
+    /// last update inside the interval is not dropped: it is drawn once the interval is over, so
+    /// a window never stays stuck on a half-drawn frame.
+    func refresh(from session: RDPSession, minimumInterval: TimeInterval = 0) {
+        if minimumInterval > 0 {
+            let elapsed = CACurrentMediaTime() - lastPaint
+            if elapsed < minimumInterval {
+                scheduleDeferredPaint(after: minimumInterval - elapsed)
+                return
+            }
+        }
+        deferredPaint?.cancel()
+        deferredPaint = nil
+        lastPaint = CACurrentMediaTime()
         if let surface = session.surface(for: remoteId) {
             remoteView.showSurface(surface, crop: info.surfaceCrop, alpha: info.isLayered)
         } else {
             remoteView.show(session.frames.image(of: info.frame))
         }
+    }
+
+    private func scheduleDeferredPaint(after delay: TimeInterval) {
+        guard deferredPaint == nil else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.deferredPaint = nil
+            guard self.isVisible else { return }
+            self.refresh(from: self.session)
+        }
+        deferredPaint = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     // MARK: Coordinate mapping (remote desktop = primary screen, 1 pixel = 1 point)
@@ -168,11 +199,14 @@ final class RemoteAppWindow: NSWindow {
         }
     }
 
-    var isPinned: Bool { level == .floating }
-
     /// Keep this remote window above everything else on the Mac, including other apps.
     func togglePinned() {
-        level = isPinned ? .normal : .floating
+        setPinned(!isPinned)
+    }
+
+    func setPinned(_ pinned: Bool) {
+        isPinned = pinned
+        if !info.isPopup { level = pinned ? .floating : .normal }
     }
 
     /// Moves the window to the next display, keeping roughly the same spot on that screen.
