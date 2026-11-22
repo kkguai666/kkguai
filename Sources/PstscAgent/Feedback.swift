@@ -1,13 +1,18 @@
 import AppKit
 
-/// Where feedback goes. The access key is public by design (it ships inside the app); it only lets
-/// someone submit through Web3Forms to this one inbox, never read it.
+/// Where feedback goes. FormSubmit starts with the recipient address and hands out a random form
+/// id in its place, so the address never appears in the app. The id is public by design: it lets
+/// someone submit to this one inbox, never read it.
 enum FeedbackConfig {
-    // Replaced by scripts/build-app.sh? No — keep it here, one place to change.
-    static let accessKey = ProcessInfo.processInfo.environment["KKGUAI_FEEDBACK_KEY"]
-        ?? "REPLACE_WITH_WEB3FORMS_ACCESS_KEY"
-    static let fallbackEmail = "REPLACE_WITH_QQ_EMAIL"
-    static let endpoint = URL(string: "https://api.web3forms.com/submit")!
+    // Public by design (see the note above); an env override makes local testing easy.
+    static let formID = ProcessInfo.processInfo.environment["KKGUAI_FEEDBACK_ID"]
+        ?? "a5cc770c9dd2efe56f301954d091182f"
+    /// Kept empty: FormSubmit hides the address, and the app should not publish it either.
+    static let fallbackEmail = ""
+    static let endpoint = URL(string: "https://formsubmit.co/ajax/\(formID)")!
+    /// FormSubmit only accepts posts that look like they came from a web page; these headers
+    /// are what its check looks at, and the form is activated for this site.
+    static let origin = "https://github.com"
 }
 
 /// The JSON body Web3Forms expects. Kept separate from the window so its shape is easy to check.
@@ -41,11 +46,11 @@ struct FeedbackPayload {
 
     func json() throws -> Data {
         var fields: [String: Any] = [
-            "access_key": FeedbackConfig.accessKey,
-            "subject": subject,
-            "from_name": "kkguai feedback",
+            "_subject": subject,
+            "name": "kkguai feedback",
             "message": body,
-            "botcheck": false,
+            "_template": "box",
+            "_captcha": "false",
         ]
         if !contact.isEmpty { fields["email"] = contact }
         return try JSONSerialization.data(withJSONObject: fields)
@@ -61,7 +66,7 @@ final class FeedbackSender {
     }
 
     func send(_ payload: FeedbackPayload, completion: @escaping (Result<Void, Failure>) -> Void) {
-        guard !FeedbackConfig.accessKey.hasPrefix("REPLACE_") else {
+        guard !FeedbackConfig.formID.hasPrefix("REPLACE_") else {
             completion(.failure(.notConfigured))
             return
         }
@@ -69,6 +74,10 @@ final class FeedbackSender {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        request.setValue(FeedbackConfig.origin, forHTTPHeaderField: "Origin")
+        request.setValue(FeedbackConfig.origin + "/", forHTTPHeaderField: "Referer")
+        request.setValue("kkguai/\(FeedbackPayload.appVersion) (macOS)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 20
         do {
             request.httpBody = try payload.json()
@@ -83,7 +92,10 @@ final class FeedbackSender {
                 result = .failure(.network(error.localizedDescription))
             } else if let http = response as? HTTPURLResponse {
                 let body = data.flatMap { String(data: $0, encoding: .utf8) }
-                if (200..<300).contains(http.statusCode), body?.contains("\"success\":true") != false {
+                // FormSubmit answers {"success":"true","message":…}; older Web3Forms sent a bool.
+                let accepted = body?.contains("\"success\":\"true\"") == true
+                    || body?.contains("\"success\":true") == true
+                if (200..<300).contains(http.statusCode), accepted {
                     result = .success(())
                 } else {
                     result = .failure(.status(http.statusCode, body))
@@ -230,7 +242,7 @@ final class FeedbackWindowController: NSWindowController, NSTextViewDelegate {
 
     private func showFailure(_ reason: String) {
         var text = L("보내지 못했습니다: %@", reason)
-        if !FeedbackConfig.fallbackEmail.hasPrefix("REPLACE_") {
+        if !FeedbackConfig.fallbackEmail.isEmpty {
             text += " " + L("또는 %@ 로 직접 보내 주세요.", FeedbackConfig.fallbackEmail)
         }
         statusLabel.stringValue = text

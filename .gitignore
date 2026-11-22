@@ -4,3 +4,5 @@
 # scripts/build-app.sh output
 build/
 .DS_Store
+
+__pycache__/

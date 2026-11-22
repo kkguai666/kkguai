@@ -122,6 +122,11 @@ Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 <br>当前发布包只支持 Apple Silicon。Intel Mac 可以从源码构建，见下面的构建说明。
 </details>
 
+<details>
+<summary><b>怎么反馈问题或提需求？</b></summary>
+<br>菜单栏 <code>kkguai → Send Feedback…</code>（피드백 보내기）直接写给我，可以留邮箱方便回复；反馈会自动带上 app 版本、macOS 版本和界面语言。也可以开 [issue](https://github.com/kkguai666/kkguai/issues)。
+</details>
+
 还有问题？看 [排障手册](docs/troubleshooting.md)，或开一个 [issue](https://github.com/kkguai666/kkguai/issues)。
 
 ### 从源码构建
@@ -247,6 +252,11 @@ Enter the Windows PC's address and account, then open apps from the Start menu. 
 <details>
 <summary><b>Does it work on Intel Macs?</b></summary>
 <br>The current release is Apple Silicon only. Intel Macs can build from source — see the build section below.
+</details>
+
+<details>
+<summary><b>How do I report a problem or ask for a feature?</b></summary>
+<br>Use <code>kkguai → Send Feedback…</code> in the menu bar. An email address is optional if you want a reply; the app adds its version, your macOS version and the interface language. GitHub [issues](https://github.com/kkguai666/kkguai/issues) work too.
 </details>
 
 Still stuck? Read the [troubleshooting guide](docs/troubleshooting.md) or open an [issue](https://github.com/kkguai666/kkguai/issues).
