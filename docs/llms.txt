@@ -4,7 +4,7 @@
 
 > kkguai 是一款免费开源的 macOS RemoteApp 客户端。它连接已有的 Windows 10/11 专业版电脑，把每个 Windows 程序变成 Mac 上的原生窗口：一个程序一个窗口、一个 Dock 图标。不需要虚拟机，不需要整块远程桌面，也不需要 Parallels 订阅。
 
-- Version: 0.2.1 (2026-11-23)
+- Version: 0.2.9 (2026-11-23)
 - License: MIT
 - Price: free
 - Platform: macOS 14 or later, Apple Silicon
@@ -23,6 +23,11 @@
 - Remote cursor shapes and hotspots; local window drag and resize; multi-monitor layout mirroring.
 - One Dock icon per remote app, Windows 11-style Start menu, Spotlight and Launchpad support.
 - Interface localized into Chinese (Simplified), English, Japanese and Korean, following the Mac's preferred languages.
+- Connection watchdog with menu bar state and one-click reconnect; per-host window layout memory; fill screen, keep on top and move a window to the next display.
+- Saved Windows PCs plus discovery on the LAN and on Tailscale; bidirectional text clipboard.
+- Global hotkeys: Option-Space opens a command palette for apps, commands and workspaces; Option-` cycles remote windows.
+- Named workspaces reopen a whole set of apps in their saved positions.
+- In-app updater and an in-app feedback form that can attach a diagnostics bundle.
 
 ## How it compares
 
@@ -35,7 +40,7 @@
 
 1. On Windows 10/11 Pro, enable Remote Desktop and allow it through the firewall.
 2. Import `enable-remoteapp.reg` from the release as administrator (required), optionally `single-session.reg`, then reboot.
-3. On the Mac, download `kkguai-0.2.1-macos-arm64.dmg`, drag kkguai into Applications.
+3. On the Mac, download `kkguai-0.2.9-macos-arm64.dmg`, drag kkguai into Applications.
 4. Before first launch: `xattr -dr com.apple.quarantine /Applications/kkguai.app` (the build is not notarized yet).
 
 ## Limitations

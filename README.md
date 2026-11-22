@@ -47,6 +47,13 @@ kkguai 是一款面向 macOS 的开源 RemoteApp 客户端。它连接你已有�
 | 多显示器 | Mac 显示器布局同步给远端，窗口可跨屏拖动 |
 | 快捷键 | Mac 键盘直通，左 Command 映射为 Ctrl，常用快捷键符合 Mac 习惯 |
 | 界面语言 | 中文 / English / 日本語 / 한국어，跟随 Mac 的系统语言 |
+| 连接自愈 | 网络看门狗盯着连接；菜单栏显示状态，断线后点一下就重连 |
+| 窗口管理 | 铺满屏幕、窗口置顶、移到下一块显示器；每台电脑记住自己的窗口位置 |
+| 剪贴板 | Mac 和 Windows 之间双向复制粘贴文字 |
+| 工作区 | 把正在跑的一套应用存成名字，之后一键全部打开并回到原位 |
+| 命令面板 | ⌥Space 搜索应用、命令和工作区，不用先切到 kkguai |
+| 发现电脑 | 扫描局域网和 Tailscale 上的 Windows 电脑，保存成常用列表 |
+| 诊断包 | 反馈时自动附带日志和环境信息，省去来回问 |
 | 桌面模式 | 需要时也能把整个 Windows 桌面放进一个 Mac 窗口 |
 
 ### 和常见方案比一比
@@ -180,6 +187,13 @@ The programs still run on that Windows PC; the Mac only displays their windows a
 | Multi-monitor | The Mac display layout is mirrored to the session; windows can move across screens |
 | Keyboard | Mac keys pass through; left Command acts as Ctrl; familiar shortcuts keep working |
 | Interface language | Chinese / English / Japanese / Korean, following the Mac's system language |
+| Self-healing connection | A watchdog watches the session; the menu bar shows its state and one click reconnects |
+| Window management | Fill the screen, keep a window on top, move it to the next display; each PC remembers its own window layout |
+| Clipboard | Copy and paste text in both directions between the Mac and Windows |
+| Workspaces | Save the set of apps you have open under a name, then reopen all of them in place with one click |
+| Command palette | ⌥Space searches apps, commands and workspaces without switching to kkguai |
+| Discovery | Finds Windows PCs on the LAN and on Tailscale and keeps them as saved computers |
+| Diagnostics bundle | Feedback can attach logs and environment details, so there is nothing to ask for later |
 | Desktop mode | Optionally show the whole Windows desktop in a single Mac window |
 
 ### How it compares
