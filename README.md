@@ -145,6 +145,8 @@ kkguai 基于 [Pstsc](https://github.com/D-opamin-e/pstsc)（MIT）修改而来�
 
 ## English
 
+**Website:** [English](https://kkguai666.github.io/kkguai/en/) · [中文](https://kkguai666.github.io/kkguai/) · [Releases](https://github.com/kkguai666/kkguai/releases/latest)
+
 ### What it is
 
 kkguai is an open-source RemoteApp client for macOS. It connects to the Windows PC you already own and turns **individual programs** into real Mac windows: their own title bar, their own Dock icon, their own ⌘Tab entry.

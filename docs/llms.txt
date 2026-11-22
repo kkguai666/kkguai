@@ -1,0 +1,54 @@
+# kkguai
+
+> kkguai is a free, open-source RemoteApp (RDP) client for macOS. It connects to a Windows 10/11 Pro PC you already own and turns individual Windows programs into native Mac windows — one window and one Dock icon per app, with no virtual machine, no full remote desktop, and no Parallels subscription.
+
+> kkguai 是一款免费开源的 macOS RemoteApp 客户端。它连接已有的 Windows 10/11 专业版电脑，把每个 Windows 程序变成 Mac 上的原生窗口：一个程序一个窗口、一个 Dock 图标。不需要虚拟机，不需要整块远程桌面，也不需要 Parallels 订阅。
+
+- Version: 0.1.1 (2026-11-23)
+- License: MIT
+- Price: free
+- Platform: macOS 14 or later, Apple Silicon
+- Host: Windows 10/11 Pro (or Enterprise / Windows Server) with Remote Desktop enabled
+- Network: LAN, VPN, or Tailscale
+- Source: https://github.com/kkguai666/kkguai
+- Download: https://github.com/kkguai666/kkguai/releases/latest
+- Website (Chinese): https://kkguai666.github.io/kkguai/
+- Website (English): https://kkguai666.github.io/kkguai/en/
+
+## What it does
+
+- Runs one native macOS window per remote Windows program (RemoteApp), instead of streaming a whole desktop.
+- Retina rendering: 200% session scaling, 2x pixel rendering, 1/2-point coordinate mapping.
+- Mac input methods for Chinese, Japanese and Korean; composed on the Mac and sent as Unicode.
+- Remote cursor shapes and hotspots; local window drag and resize; multi-monitor layout mirroring.
+- One Dock icon per remote app, Windows 11-style Start menu, Spotlight and Launchpad support.
+
+## How it compares
+
+- Parallels Desktop: runs a full Windows virtual machine on the Mac, requires a subscription (from $99/year) and a Windows licence. kkguai uses a Windows PC you already own, is free, and does not use the Mac's RAM or CPU for Windows.
+- Microsoft Windows App (Remote Desktop): free, but shows the entire Windows desktop in one window. RemoteApp support in Microsoft's client requires enterprise AVD/RDS infrastructure.
+- UTM: a virtual machine app; requires a Windows licence and VM resources.
+- kkguai's trade-off: the Windows host must stay on and reachable; Windows Home cannot host RDP.
+
+## Install (summary)
+
+1. On Windows 10/11 Pro, enable Remote Desktop and allow it through the firewall.
+2. Import `enable-remoteapp.reg` from the release as administrator (required), optionally `single-session.reg`, then reboot.
+3. On the Mac, download `kkguai-0.1.1-macos-arm64.dmg`, drag kkguai into Applications.
+4. Before first launch: `xattr -dr com.apple.quarantine /Applications/kkguai.app` (the build is not notarized yet).
+
+## Limitations
+
+- Apple Silicon only in the current release; Intel Macs must build from source.
+- Not notarized by Apple; one xattr command is required on first launch.
+- Windows Home cannot host RDP.
+- The remote Windows PC must remain on and reachable.
+- If the same Windows account is already signed in to a desktop session, app-window mode cannot connect; sign that session out first.
+
+## Pages
+
+- [Chinese landing page](https://kkguai666.github.io/kkguai/)
+- [English landing page](https://kkguai666.github.io/kkguai/en/)
+- [README (bilingual)](https://github.com/kkguai666/kkguai#readme)
+- [Troubleshooting (Chinese)](https://kkguai666.github.io/kkguai/troubleshooting.html)
+- [Releases](https://github.com/kkguai666/kkguai/releases)

@@ -6,14 +6,66 @@
 <title>kkguai — 把 Windows 程序变成 Mac 原生窗口 / Run Windows apps as native Mac windows</title>
 <meta name="description" content="kkguai 是一款免费开源的 macOS RemoteApp 客户端：连接你已有的 Windows 电脑，让每个 Windows 程序变成 Mac 上的原生窗口。不用虚拟机，不用整块远程桌面，也不用买 Parallels。">
 <link rel="canonical" href="https://kkguai666.github.io/kkguai/">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="kkguai — 把 Windows 程序变成 Mac 原生窗口">
 <meta property="og:description" content="不用虚拟机，不用整块远程桌面，也不用再买 Parallels。免费开源。">
 <meta property="og:url" content="https://kkguai666.github.io/kkguai/">
 <meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="kkguai — 把 Windows 程序变成 Mac 原生窗口">
+<meta name="twitter:description" content="不用虚拟机，也不用再买 Parallels。免费开源。">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
 <meta name="theme-color" content="#09090B">
 <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<script type="application/ld+json" id="ld">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://kkguai666.github.io/kkguai/#website",
+      "url": "https://kkguai666.github.io/kkguai/",
+      "name": "kkguai",
+      "inLanguage": ["zh-CN", "en"]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://kkguai666.github.io/kkguai/#app",
+      "name": "kkguai",
+      "url": "https://kkguai666.github.io/kkguai/",
+      "description": "免费开源的 macOS RemoteApp 客户端：连接已有的 Windows 电脑，把每个 Windows 程序变成 Mac 上的原生窗口。不用虚拟机，不用整块远程桌面，也不用 Parallels。",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "RemoteApp / RDP client",
+      "operatingSystem": "macOS 14+ (Apple Silicon)",
+      "softwareVersion": "0.1.1",
+      "license": "https://opensource.org/license/mit",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "downloadUrl": "https://github.com/kkguai666/kkguai/releases/latest",
+      "sameAs": ["https://github.com/kkguai666/kkguai"],
+      "screenshot": "https://kkguai666.github.io/kkguai/assets/social.png",
+      "inLanguage": ["zh-CN", "en"]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "需要什么版本的 Windows？", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 / 11 专业版或企业版，并开启远程桌面。家庭版不能作为 RDP 主机。" } },
+        { "@type": "Question", "name": "Windows 电脑要一直开着吗？", "acceptedAnswer": { "@type": "Answer", "text": "要。程序本身运行在那台机器上，kkguai 只负责显示窗口和发送输入。" } },
+        { "@type": "Question", "name": "不在同一个局域网能用吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。VPN、Tailscale、端口转发都可以。建议不要直接暴露 3389。" } },
+        { "@type": "Question", "name": "为什么首次打开要执行 xattr？", "acceptedAnswer": { "@type": "Answer", "text": "发布包还没有经过 Apple 公证，下载后 macOS 会隔离它。去掉隔离标记只需要一条命令。" } },
+        { "@type": "Question", "name": "和 Parallels 有什么区别？", "acceptedAnswer": { "@type": "Answer", "text": "Parallels 在 Mac 里跑一整台 Windows 虚拟机并收取订阅费；kkguai 用你已有的 Windows 电脑，免费、不占 Mac 资源。" } },
+        { "@type": "Question", "name": "Intel Mac 能用吗？", "acceptedAnswer": { "@type": "Answer", "text": "当前发布包只支持 Apple Silicon。Intel Mac 可以从源码构建。" } },
+        { "@type": "Question", "name": "安全吗？", "acceptedAnswer": { "@type": "Answer", "text": "连接走标准 RDP 并加密传输。建议放在局域网、VPN 或 Tailscale 里，给账号设置强密码。" } }
+      ]
+    }
+  ]
+}
+</script>
 <style>
   :root {
     --bg: #09090B;
@@ -388,7 +440,7 @@
       <a href="https://github.com/kkguai666/kkguai">GitHub</a>
     </nav>
     <div class="nav-right">
-      <button class="lang-btn" id="lang" type="button" aria-label="Switch language">EN</button>
+      <a class="lang-btn" id="lang" href="en/" hreflang="en" aria-label="Switch to English">EN</a>
       <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest" data-en="Download">下载</a>
     </div>
   </div>
@@ -710,46 +762,6 @@
     }
 
     var root = document.documentElement;
-    var btn = document.getElementById('lang');
-    var stored = null;
-    try { stored = localStorage.getItem('kkguai-lang'); } catch (e) {}
-    var initial = stored || ((navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh');
-
-    var metaDesc = document.querySelector('meta[name="description"]');
-    var copy = {
-      zh: {
-        title: document.title,
-        desc: metaDesc ? metaDesc.getAttribute('content') : ''
-      },
-      en: {
-        title: 'kkguai — Run Windows apps as native Mac windows',
-        desc: 'kkguai is a free, open-source RemoteApp client for macOS: every Windows app opens as its own native Mac window. No virtual machine, no full remote desktop, no Parallels subscription.'
-      }
-    };
-
-    function applyLang(lang) {
-      var c = copy[lang] || copy.zh;
-      root.dataset.lang = lang;
-      root.lang = lang === 'en' ? 'en' : 'zh-CN';
-      document.querySelectorAll('[data-en]').forEach(function (el) {
-        if (!el.dataset.zhHtml) el.dataset.zhHtml = el.innerHTML;
-        el.innerHTML = lang === 'en' ? el.getAttribute('data-en') : el.dataset.zhHtml;
-      });
-      document.querySelectorAll('[data-en-aria]').forEach(function (el) {
-        if (!el.dataset.zhAria) el.dataset.zhAria = el.getAttribute('aria-label') || '';
-        el.setAttribute('aria-label', lang === 'en' ? el.getAttribute('data-en-aria') : el.dataset.zhAria);
-      });
-      document.title = c.title;
-      if (metaDesc) metaDesc.setAttribute('content', c.desc);
-      btn.textContent = lang === 'en' ? '中文' : 'EN';
-      btn.setAttribute('aria-label', lang === 'en' ? '切换到中文' : 'Switch to English');
-      try { localStorage.setItem('kkguai-lang', lang); } catch (e) {}
-    }
-
-    applyLang(initial);
-    btn.addEventListener('click', function () {
-      applyLang(root.dataset.lang === 'en' ? 'zh' : 'en');
-    });
 
     document.querySelectorAll('[data-copy]').forEach(function (b) {
       b.addEventListener('click', function () {
