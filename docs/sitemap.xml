@@ -78,5 +78,17 @@
     <lastmod>2026-11-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/troubleshooting.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/troubleshooting.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/troubleshooting.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/en/troubleshooting.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/troubleshooting.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/troubleshooting.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/troubleshooting.html"/>
   </url>
 </urlset>

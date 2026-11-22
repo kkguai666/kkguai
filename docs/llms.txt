@@ -59,5 +59,6 @@
 - [Chinese landing page](https://kkguai666.github.io/kkguai/)
 - [English landing page](https://kkguai666.github.io/kkguai/en/)
 - [README (bilingual)](https://github.com/kkguai666/kkguai#readme)
-- [Troubleshooting (Chinese)](https://kkguai666.github.io/kkguai/troubleshooting.html)
+- [Troubleshooting: connection, credentials, RemoteApp, input method, Retina, multi-monitor, security (Chinese)](https://kkguai666.github.io/kkguai/troubleshooting.html)
+- [Troubleshooting (English)](https://kkguai666.github.io/kkguai/en/troubleshooting.html)
 - [Releases](https://github.com/kkguai666/kkguai/releases)

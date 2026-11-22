@@ -127,7 +127,7 @@ Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 <br>菜单栏 <code>kkguai → Send Feedback…</code>（피드백 보내기）直接写给我，可以留邮箱方便回复；反馈会自动带上 app 版本、macOS 版本和界面语言。也可以开 [issue](https://github.com/kkguai666/kkguai/issues)。
 </details>
 
-还有问题？看 [排障手册](docs/troubleshooting.md)，或开一个 [issue](https://github.com/kkguai666/kkguai/issues)。
+还有问题？看 [排障手册](https://kkguai666.github.io/kkguai/troubleshooting.html)，或开一个 [issue](https://github.com/kkguai666/kkguai/issues)。
 
 ### 从源码构建
 
@@ -259,7 +259,7 @@ Enter the Windows PC's address and account, then open apps from the Start menu. 
 <br>Use <code>kkguai → Send Feedback…</code> in the menu bar. An email address is optional if you want a reply; the app adds its version, your macOS version and the interface language. GitHub [issues](https://github.com/kkguai666/kkguai/issues) work too.
 </details>
 
-Still stuck? Read the [troubleshooting guide](docs/troubleshooting.md) or open an [issue](https://github.com/kkguai666/kkguai/issues).
+Still stuck? Read the [troubleshooting guide](https://kkguai666.github.io/kkguai/en/troubleshooting.html) or open an [issue](https://github.com/kkguai666/kkguai/issues).
 
 ### Build from source
 

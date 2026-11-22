@@ -1,5 +1,7 @@
 # kkguai 排障
 
+**中文** · [English](en/troubleshooting.html)
+
 按「症状」找，不要从头读。
 
 如果你还没装好，先看 [README 的安装步骤](https://github.com/kkguai666/kkguai#安装)。
