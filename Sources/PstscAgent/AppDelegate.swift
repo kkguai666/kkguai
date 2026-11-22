@@ -1045,6 +1045,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     func menuNeedsUpdate(_ menu: NSMenu) {
         guard menu === windowListMenu else { return }
         menu.removeAllItems()
+        let zoom = menu.addItem(withTitle: L("화면 채우기"), action: #selector(toggleRemoteZoom), keyEquivalent: "f")
+        zoom.keyEquivalentModifierMask = [.command, .option]
+        zoom.target = self
+        let pin = menu.addItem(withTitle: L("항상 위에 두기"), action: #selector(toggleRemotePinned), keyEquivalent: "t")
+        pin.keyEquivalentModifierMask = [.command, .option]
+        pin.target = self
+        pin.state = activeRemoteWindow?.isPinned == true ? .on : .off
+        let move = menu.addItem(withTitle: L("다음 화면으로 이동"), action: #selector(moveRemoteToNextDisplay), keyEquivalent: "")
+        move.target = self
+        move.isEnabled = NSScreen.screens.count > 1
+        menu.addItem(.separator())
         let windows = windowManager?.appWindows ?? []
         if windows.isEmpty {
             menu.addItem(withTitle: L("열린 원격 창 없음"), action: nil, keyEquivalent: "")
@@ -1059,6 +1070,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             }
             menu.addItem(item)
         }
+    }
+
+    /// The remote window the user is working with: the key window, else the last visible one.
+    private var activeRemoteWindow: RemoteAppWindow? {
+        if let window = NSApp.keyWindow as? RemoteAppWindow { return window }
+        if let window = NSApp.mainWindow as? RemoteAppWindow { return window }
+        return windowManager?.appWindows.first { $0.isVisible }
+    }
+
+    @objc private func toggleRemoteZoom() {
+        guard let window = activeRemoteWindow else { return }
+        window.toggleZoom()
+    }
+
+    @objc private func toggleRemotePinned() {
+        guard let window = activeRemoteWindow else { return }
+        window.togglePinned()
+    }
+
+    @objc private func moveRemoteToNextDisplay() {
+        guard let window = activeRemoteWindow else { return }
+        window.moveToNextDisplay()
     }
 
     @objc private func showRemoteWindow(_ sender: NSMenuItem) {

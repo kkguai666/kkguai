@@ -20,6 +20,8 @@ final class RemoteAppWindow: NSWindow {
     private var reportedFrame: (frame: CGRect, until: Date)?
     /// The user finished dragging or resizing this window on the Mac.
     var onFrameCommitted: ((RemoteAppWindow) -> Void)?
+    /// Where the window was before it was expanded to fill the screen.
+    private var frameBeforeZoom: NSRect?
 
     init(info: RemoteWindowInfo, session: RDPSession) {
         remoteId = info.id
@@ -150,6 +152,45 @@ final class RemoteAppWindow: NSWindow {
         reportedFrame = (whole, Date().addingTimeInterval(1.5))
         session.moveWindow(remoteId, to: whole)
         return true
+    }
+
+    // MARK: Mac-side window controls
+
+    /// Fill the screen (keeping room for the menu bar and Dock) or go back to the old frame.
+    func toggleZoom() {
+        guard !info.isPopup else { return }
+        if let saved = frameBeforeZoom {
+            frameBeforeZoom = nil
+            restoreFrame(saved)
+        } else if let screen = screen ?? NSScreen.main {
+            frameBeforeZoom = frame
+            restoreFrame(screen.visibleFrame)
+        }
+    }
+
+    var isPinned: Bool { level == .floating }
+
+    /// Keep this remote window above everything else on the Mac, including other apps.
+    func togglePinned() {
+        level = isPinned ? .normal : .floating
+    }
+
+    /// Moves the window to the next display, keeping roughly the same spot on that screen.
+    func moveToNextDisplay() {
+        let screens = NSScreen.screens
+        guard screens.count > 1, let current = screen ?? NSScreen.main,
+              let index = screens.firstIndex(of: current) else { return }
+        let target = screens[(index + 1) % screens.count]
+        let relX = (frame.midX - current.frame.midX) / current.frame.width
+        let relY = (frame.midY - current.frame.midY) / current.frame.height
+        var moved = frame
+        moved.origin.x = target.frame.midX + relX * target.frame.width - moved.width / 2
+        moved.origin.y = target.frame.midY + relY * target.frame.height - moved.height / 2
+        // Do not leave part of it outside the target display.
+        let visible = target.visibleFrame
+        moved.origin.x = min(max(moved.minX, visible.minX), visible.maxX - moved.width)
+        moved.origin.y = min(max(moved.minY, visible.minY), visible.maxY - moved.height)
+        restoreFrame(moved)
     }
 
     static func desktopRect(forMacFrame f: NSRect) -> CGRect {

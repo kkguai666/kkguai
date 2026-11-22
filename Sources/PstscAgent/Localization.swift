@@ -241,6 +241,9 @@ private enum Translations {
         "원격 PC 도달 가능 · %d ms": ("Remote PC reachable · %d ms", "リモートPC応答あり · %d ms"),
         "연결되지 않음": ("Not connected", "未接続"),
         "대기 중": ("Waiting", "待機中"),
+        "화면 채우기": ("Fill the Screen", "画面いっぱいに表示"),
+        "항상 위에 두기": ("Keep on Top", "常に最前面"),
+        "다음 화면으로 이동": ("Move to Next Screen", "次の画面へ移動"),
     ]
 }
 
@@ -383,5 +386,8 @@ private enum Chinese {
         "원격 PC 도달 가능 · %d ms": "远程电脑可达 · %d ms",
         "연결되지 않음": "未连接",
         "대기 중": "等待中",
+        "화면 채우기": "填满屏幕",
+        "항상 위에 두기": "保持在最前面",
+        "다음 화면으로 이동": "移到下一个屏幕",
     ]
 }
