@@ -49,6 +49,8 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     private static let width: CGFloat = 640
     private static let listHeight: CGFloat = 560
     private static let columns = 6
+    /// Visible frame of the screen the panel was opened on; kept so height changes stay anchored.
+    private var anchorFrame: NSRect?
 
     init(catalog: AppCatalog, icons: AppIconStore, prefs: StartMenuPrefs) {
         self.catalog = catalog
@@ -83,11 +85,10 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     func present() {
         guard let window else { return }
         searchField.stringValue = ""
-        show(.home)
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main ?? NSScreen.screens[0]
-        let visible = screen.visibleFrame
-        window.setFrameOrigin(NSPoint(x: (visible.midX - window.frame.width / 2).rounded(), y: visible.minY + 12))
+        anchorFrame = screen.visibleFrame
+        show(.home)
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(searchField)
@@ -97,6 +98,17 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     func reload() {
         guard window?.isVisible == true else { return }
         show(page)
+    }
+
+    /// Cheap progress tick while icons are still being fetched: refresh the "loading…" line
+    /// without rebuilding (and losing the hover/selection of) the icon grids.
+    func updateProgress() {
+        guard window?.isVisible == true, page == .home else { return }
+        let wasHidden = loadingLabel.superview?.isHidden ?? true
+        updateLoadingLabel()
+        if (loadingLabel.superview?.isHidden ?? true) != wasHidden {
+            fitWindow(.home)
+        }
     }
 
     override func close() {
@@ -172,6 +184,10 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         content.layoutSubtreeIfNeeded()
         let height = page == .home ? min(max(content.fittingSize.height, 220), 660) : Self.listHeight
         window.setContentSize(NSSize(width: Self.width, height: height))
+        // setContentSize keeps the top edge; pin the bottom above the Dock instead so growth goes up.
+        let visible = anchorFrame ?? (NSScreen.main?.visibleFrame ?? .zero)
+        window.setFrameOrigin(NSPoint(x: (visible.midX - window.frame.width / 2).rounded(),
+                                      y: visible.minY + 12))
     }
 
     private func makeSearchBox() -> NSView {
@@ -315,7 +331,11 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         }
 
         Self.clear(recentGrid)
-        let recent = Array(prefs.recent(in: catalog.apps).prefix(3))
+        // An app that is already pinned above does not need a second tile at the bottom.
+        let pinnedIDs = Set(pinned.map(\.appID))
+        let recent = Array(prefs.recent(in: catalog.apps)
+            .filter { !pinnedIDs.contains($0.appID) }
+            .prefix(3))
         recentGrid.isHidden = recent.isEmpty
         if !recent.isEmpty {
             recentGrid.addRow(with: recent.map { makeTile(for: $0) })
@@ -371,12 +391,15 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     @objc private func togglePin(_ sender: NSMenuItem) {
         guard let app = sender.representedObject as? RemoteApp else { return }
         prefs.togglePin(app, in: catalog.apps)
-        if page == .home { fillHome() }
+        if page == .home {
+            fillHome()
+            fitWindow(.home)
+        }
     }
 
     private func launch(_ app: RemoteApp) {
         close()
-        prefs.recordLaunch(app)
+        // The recent list is recorded in AppDelegate, so Dock/Spotlight launches count too.
         onLaunch?(app)
     }
 
@@ -523,6 +546,12 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         }
         if first.isASCII, CharacterSet.letters.contains(first) {
             return String(first).uppercased()
+        }
+        // Chinese/Japanese names: group by the first letter of the Latin reading (pinyin/romaji).
+        if let latin = name.applyingTransform(.toLatin, reverse: false)?
+            .folding(options: .diacriticInsensitive, locale: .current),
+           let letter = latin.unicodeScalars.first(where: { CharacterSet.letters.contains($0) }) {
+            return String(Character(letter)).uppercased()
         }
         return "#"
     }

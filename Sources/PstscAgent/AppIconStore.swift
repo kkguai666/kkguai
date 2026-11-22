@@ -61,7 +61,8 @@ final class StartMenuPrefs {
         }
         var seen = Set<String>()
         return Self.defaultPinNames.compactMap { name in
-            catalog.first { $0.name == name && seen.insert($0.appID).inserted }
+            // Exported Start menu names sometimes carry stray spaces (" TransMac").
+            catalog.first { $0.name.trimmingCharacters(in: .whitespaces) == name && seen.insert($0.appID).inserted }
         }.prefix(18).map { $0 }
     }
 

@@ -99,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             self.updateLoadingStatus()
         }
         catalog.onIconsProgress = { [weak self] in
-            self?.startMenu.reload()
+            self?.startMenu.updateProgress()
             self?.updateLoadingStatus()
         }
         startMenu.onLaunch = { [weak self] app in self?.launch(app) }
@@ -363,6 +363,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         // Leaving desktop mode for apps (e.g. closing the desktop window) ends a pending sign-out.
         if newMode == .apps { signingOutForApps = false }
         mode = newMode
+        startMenu.isDesktopMode = (newMode == .desktop)
         ready = false
         launchRetries = 0
 
@@ -485,6 +486,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     private func launch(_ app: RemoteApp) {
+        startPrefs.recordLaunch(app)
         if mode == .apps, ready, let session {
             session.launch(appID: app.appID)
         } else {
