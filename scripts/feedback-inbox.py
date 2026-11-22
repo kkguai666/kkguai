@@ -32,7 +32,8 @@ HOST = "win01"
 REMOTE_CMD = r"C:\Users\Administrator\.claude\skills\gmail-api\scripts\kkguai.cmd"
 # Only FormSubmit's own mail. Gmail's search covers Sent too, so a copy we mail to ourselves
 # (--forward-to) would come back as new feedback on the next run and be copied again, forever.
-QUERY = 'subject:[kkguai] from:submissions@formsubmit.co newer_than:120d'
+# in:anywhere matters: FormSubmit mail often lands in Spam, and a plain search skips it.
+QUERY = 'in:anywhere subject:[kkguai] from:submissions@formsubmit.co newer_than:120d'
 OWN_ADDRESS = 'sou79532@gmail.com'
 STATE_VERSION = 1
 
@@ -136,6 +137,10 @@ def main():
             continue
         if OWN_ADDRESS in (entry.get("from") or ""):
             continue
+        try:
+            gmail("unspam", message_id)  # so it is visible in the inbox from now on
+        except Exception:  # noqa: BLE001 — cosmetic only
+            pass
         try:
             full = gmail("read", message_id)
         except Exception as error:  # noqa: BLE001
