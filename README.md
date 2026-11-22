@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://github.com/kkguai666/kkguai/releases/latest"><img src="docs/assets/social.png" alt="kkguai — 把 Windows 程序变成 Mac 原生窗口 / Run Windows apps as native Mac windows" width="100%"></a>
+<a href="https://github.com/kkguai666/kkguai/releases/latest"><img src="docs/assets/demo.gif" alt="kkguai 演示：点 Dock 图标，Windows 程序直接变成 Mac 原生窗口 / Demo: click a Dock icon and a Windows app becomes a native Mac window" width="100%"></a>
 
 # kkguai
 
