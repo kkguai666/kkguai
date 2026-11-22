@@ -10,12 +10,12 @@ New messages are written as JSON files and printed one per line for a scheduled
 session to pick up. Processed message ids are remembered in a local state file,
 so a message is handled once.
 
-Each new message is also forwarded verbatim to the maintainer's QQ mailbox
-(from the same Gmail account), unless --no-forward is given.
+Gmail is the inbox: nothing is forwarded anywhere by default. Pass
+--forward-to ADDRESS to also send a copy from the same Gmail account.
 
 Usage:
-    scripts/feedback-inbox.py [--state PATH] [--out DIR] [--limit N]
-                              [--forward-to ADDR] [--no-forward] [--replay]
+    scripts/feedback-inbox.py [--state PATH] [--out DIR] [--limit N] [--replay]
+                              [--forward-to ADDR]
 
 Exit codes: 0 (new mail or none), 4 SSH/Gmail failure.
 """
@@ -30,13 +30,11 @@ from pathlib import Path
 
 HOST = "win01"
 REMOTE_CMD = r"C:\Users\Administrator\.claude\skills\gmail-api\scripts\kkguai.cmd"
-# Only FormSubmit's own mail. The QQ copies we forward are sent from this same Gmail account,
-# and Gmail's search covers Sent too — without the sender filter every run would treat its own
-# copy as new feedback and forward it again, forever.
+# Only FormSubmit's own mail. Gmail's search covers Sent too, so a copy we mail to ourselves
+# (--forward-to) would come back as new feedback on the next run and be copied again, forever.
 QUERY = 'subject:[kkguai] from:submissions@formsubmit.co newer_than:120d'
 OWN_ADDRESS = 'sou79532@gmail.com'
 STATE_VERSION = 1
-DEFAULT_FORWARD = "1076822082@qq.com"
 
 
 def ssh(remote_command, timeout=120):
@@ -113,8 +111,8 @@ def main():
     parser.add_argument("--state", default=str(Path.home() / ".local/state/kkguai/feedback-state.json"))
     parser.add_argument("--out", default=str(Path.home() / ".local/state/kkguai/feedback"))
     parser.add_argument("--limit", type=int, default=50)
-    parser.add_argument("--forward-to", default=DEFAULT_FORWARD)
-    parser.add_argument("--no-forward", action="store_true")
+    parser.add_argument("--forward-to", default="",
+                        help="also send a copy to this address (off by default)")
     parser.add_argument("--replay", action="store_true", help="print messages that were seen before")
     args = parser.parse_args()
 
@@ -153,7 +151,7 @@ def main():
         path = out_dir / ("%s.json" % message_id)
         path.write_text(json.dumps(item, ensure_ascii=False, indent=1))
 
-        if not args.no_forward:
+        if args.forward_to:
             try:
                 forward(args.forward_to, item["subject"] or "[kkguai]", item["text"])
                 item["forwarded_to"] = args.forward_to
