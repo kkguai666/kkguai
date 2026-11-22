@@ -62,7 +62,7 @@ final class PerfStats {
         lock.lock(); inputs += 1; pendingInputAt = CACurrentMediaTime(); lock.unlock()
     }
 
-    /// Time spent assigning the new frame to the layer (includes the implicit CA upload).
+    /// Time spent building and handing off one frame.
     @inline(__always)
     func recordShow(_ seconds: Double) {
         guard Self.enabled else { return }
@@ -70,7 +70,15 @@ final class PerfStats {
         showCount += 1
         showTotal += seconds
         showMax = max(showMax, seconds)
-        // Input-to-pixels latency: how long the user waited from the last key/mouse event.
+        lock.unlock()
+    }
+
+    /// Called when the pixels actually land in the view (draw), so the input-to-pixels latency
+    /// covers everything the user waits for, not just the image build.
+    @inline(__always)
+    func recordPresented() {
+        guard Self.enabled else { return }
+        lock.lock()
         if pendingInputAt > 0 {
             let latency = CACurrentMediaTime() - pendingInputAt
             latencyCount += 1

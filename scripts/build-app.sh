@@ -57,8 +57,14 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-codesign --force --sign - "$frameworks"/*.dylib >/dev/null
-codesign --force --sign - "$app" >/dev/null
+# A stable identity matters: an ad-hoc signature changes with every build, so macOS treats each
+# rebuild as a new app and asks for the login password before handing over the saved RDP password.
+# With a fixed certificate the Keychain "Always Allow" answer keeps working across builds.
+SIGN_ID="kkguai Self-Signed"
+security find-identity -v -p codesigning 2>/dev/null | grep -qF "$SIGN_ID" || SIGN_ID="-"
+
+codesign --force --sign "$SIGN_ID" "$frameworks"/*.dylib >/dev/null
+codesign --force --sign "$SIGN_ID" "$app" >/dev/null
 
 [ "${1:-}" = "--no-install" ] && { echo "Built: $app"; exit 0; }
 rm -rf "/Applications/kkguai.app"

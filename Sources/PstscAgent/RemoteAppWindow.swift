@@ -241,6 +241,7 @@ final class RemoteContentView: NSView, NSTextInputClient {
         guard let image = frameImage, let ctx = NSGraphicsContext.current?.cgContext else { return }
         ctx.interpolationQuality = .none
         ctx.draw(image, in: bounds)
+        PerfStats.shared.recordPresented()
     }
 
     override func updateTrackingAreas() {
