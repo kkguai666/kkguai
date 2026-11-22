@@ -4,6 +4,8 @@
 
 [中文](#中文) · [English](#english)
 
+> **下载 / Download:** [kkguai 0.1.1 · Apple Silicon · macOS 14+](https://github.com/kkguai666/kkguai/releases/latest)
+
 ---
 
 ## 中文
@@ -34,9 +36,21 @@ kkguai 是一款 macOS 上的 RDP RemoteApp 客户端。它连接你已有的 Wi
 
 ### 系统要求
 
-- macOS 14 或更高
+- macOS 14 或更高（当前发布包为 Apple Silicon）
 - 一台开启了远程桌面（RDP）的 Windows 10 / 11 专业版电脑
 - 两台机器之间网络可达（局域网、VPN 或 Tailscale 均可）
+
+### 安装
+
+1. 从 [Releases](https://github.com/kkguai666/kkguai/releases/latest) 下载 `kkguai-*-macos-arm64.zip`。
+2. 解压，把 `kkguai.app` 拖进「应用程序」。
+3. 发布包尚未经过 Apple 公证，首次打开前执行一次：
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/kkguai.app
+   ```
+
+   然后正常双击打开（或右键 → 打开）。只需要做这一次。
 
 ### 构建
 
@@ -91,9 +105,21 @@ kkguai is a RemoteApp (RDP) client for macOS. It connects to a Windows PC you al
 
 ### Requirements
 
-- macOS 14 or later
+- macOS 14 or later (the current release is Apple Silicon)
 - A Windows 10 / 11 Pro PC with Remote Desktop (RDP) enabled
 - Network reachability between both machines (LAN, VPN or Tailscale)
+
+### Install
+
+1. Download `kkguai-*-macos-arm64.zip` from [Releases](https://github.com/kkguai666/kkguai/releases/latest).
+2. Unzip and drag `kkguai.app` into Applications.
+3. The build is not notarized by Apple yet. Before the first launch, run once:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/kkguai.app
+   ```
+
+   Then open it normally (double-click, or right-click → Open). Only needed once.
 
 ### Build
 
