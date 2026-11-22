@@ -352,6 +352,13 @@
   .feat svg { width: 22px; height: 22px; stroke: var(--blue); }
   .feat h3 { margin: 18px 0 8px; font-size: 15.5px; font-weight: 550; letter-spacing: -0.01em; }
   .feat p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--muted); }
+  .feat.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; text-align: left; }
+  .feat.wide svg { flex: none; }
+  .feat.wide h3 { margin: 0 0 5px; }
+  .feat.wide .modes { margin-left: auto; display: flex; gap: 8px; flex: none; }
+  .feat.wide .modes span { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .feat.wide .modes span.on { color: #fff; border-color: rgba(124,179,239,.55); background: rgba(124,179,239,.12); }
+  @media (max-width: 760px) { .feat.wide { flex-wrap: wrap; } .feat.wide .modes { margin-left: 42px; } }
 
   /* comparison */
   .table-wrap { margin-top: 48px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-soft); }
@@ -608,6 +615,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="9" rx="1.5"/><rect x="9" y="11" width="13" height="9" rx="1.5"/><path d="M5 17h3"/></svg>
           <h3 data-en="Multi-monitor aware">多显示器不用重配</h3>
           <p data-en="Your Mac display layout is mirrored to the remote session, so windows can be dragged across screens the way you expect.">Mac 的显示器布局会同步给远端会话，窗口可以跨屏拖动，不用每次重新摆一遍。</p>
+        </div>
+        <div class="feat wide">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M19 7h1M4 17h11M21 17h-1M4 12h3M13 12h7"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="18" cy="17" r="2.2"/></svg>
+          <div>
+            <h3 data-en="Per-app optimisation">每个程序自己的刷新方式</h3>
+            <p data-en="Each remote program gets its own refresh mode — Automatic, Smooth or Power saver. Players default to Smooth, note-takers to Power saver, and an always-on-top default survives reconnects.">视频播放器默认全速，后台窗口降到约 6 帧/秒，记事本这类再省到约 3 帧；还能让程序打开时保持最前面，重连后仍然记得。</p>
+          </div>
+          <div class="modes"><span class="on">自动</span><span>流畅</span><span>省电</span></div>
         </div>
       </div>
     </div>
