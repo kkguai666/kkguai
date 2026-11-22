@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     /// Groups remote windows by program and gives each program its own Dock icon.
     private lazy var programs = ProgramTracker(catalog: catalog, icons: appIcons)
     private let windowListMenu = NSMenu(title: L("창"))
+    private let workspaceMenu = NSMenu(title: L("워크스페이스"))
     private var modeMenuItem: NSMenuItem?
     private var shareHomeItem: NSMenuItem?
     private var shareClipboardItem: NSMenuItem?
@@ -187,6 +188,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         }
     }
 
+    // MARK: Workspaces
+
+    private func runningAppIDs() -> [String] {
+        programs.programs.values
+            .filter { !$0.windowIds.isEmpty }
+            .compactMap(\.appID)
+    }
+
+    @objc private func saveWorkspace() {
+        let ids = runningAppIDs()
+        guard !ids.isEmpty, let host = credentials?.host else {
+            showSimpleAlert(L("지금 실행 중인 앱이 없습니다."), "")
+            return
+        }
+        let alert = NSAlert()
+        alert.messageText = L("워크스페이스 저장")
+        alert.informativeText = L("지금 실행 중인 앱 %d개를 이 이름으로 저장합니다.", ids.count)
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+        field.placeholderString = L("이름")
+        alert.accessoryView = field
+        alert.addButton(withTitle: L("저장"))
+        alert.addButton(withTitle: L("취소"))
+        let finish: (NSApplication.ModalResponse) -> Void = { response in
+            guard response == .alertFirstButtonReturn else { return }
+            let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return }
+            WorkspaceStore.save(Workspace(name: name, host: host, appIDs: ids))
+        }
+        if let window = NSApp.keyWindow ?? connectWindow.window {
+            alert.beginSheetModal(for: window, completionHandler: finish)
+        } else {
+            finish(alert.runModal())
+        }
+    }
+
+    @objc private func openWorkspace(_ sender: NSMenuItem) {
+        guard let workspace = sender.representedObject as? Workspace else { return }
+        guard mode == .apps, ready else {
+            showSimpleAlert(L("연결된 후에 열 수 있습니다."), "")
+            return
+        }
+        for appID in workspace.appIDs {
+            launch(remoteApp(forID: appID))
+        }
+    }
+
     /// Actions and open windows offered by ⌥Space in addition to Start-menu apps.
     private func paletteCommands() -> [StartMenuController.PaletteCommand] {
         var commands: [StartMenuController.PaletteCommand] = []
@@ -204,6 +251,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         }
         if credentials != nil {
             commands.append(.init(title: L("지금 다시 연결")) { [weak self] in self?.reconnectNow() })
+        }
+        for workspace in WorkspaceStore.workspaces(for: credentials?.host ?? "") {
+            commands.append(.init(title: L("워크스페이스: %@", workspace.name)) { [weak self] in
+                guard let self else { return }
+                guard self.mode == .apps, self.ready else { return }
+                for appID in workspace.appIDs { self.launch(self.remoteApp(forID: appID)) }
+            })
         }
         commands.append(.init(title: L("진단 정보 저장…")) { [weak self] in self?.saveDiagnostics() })
         commands.append(.init(title: L("피드백 보내기…")) { [weak self] in self?.showFeedback() })
@@ -918,6 +972,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         windowListMenu.delegate = self
         windowItem.submenu = windowListMenu
         main.addItem(windowItem)
+        workspaceMenu.delegate = self
+        let workspaceItem = NSMenuItem()
+        workspaceItem.title = L("워크스페이스")
+        workspaceItem.submenu = workspaceMenu
+        appMenu.addItem(.separator())
+        appMenu.addItem(workspaceItem)
 
         NSApp.mainMenu = main
     }
@@ -1118,6 +1178,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        if menu === workspaceMenu {
+            menu.removeAllItems()
+            let save = menu.addItem(withTitle: L("워크스페이스 저장…"),
+                                    action: #selector(saveWorkspace), keyEquivalent: "")
+            save.target = self
+            save.isEnabled = ready && !runningAppIDs().isEmpty
+            let host = credentials?.host ?? ""
+            let saved = WorkspaceStore.workspaces(for: host)
+            menu.addItem(.separator())
+            for workspace in saved {
+                let item = NSMenuItem(title: workspace.name, action: #selector(openWorkspace(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = workspace
+                item.isEnabled = ready
+                menu.addItem(item)
+            }
+            if saved.isEmpty {
+                let empty = NSMenuItem(title: L("저장된 워크스페이스 없음"), action: nil, keyEquivalent: "")
+                empty.isEnabled = false
+                menu.addItem(empty)
+            }
+            return
+        }
         guard menu === windowListMenu else { return }
         menu.removeAllItems()
         let zoom = menu.addItem(withTitle: L("화면 채우기"), action: #selector(toggleRemoteZoom), keyEquivalent: "f")
