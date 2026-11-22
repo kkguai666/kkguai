@@ -33,7 +33,7 @@ func L(_ korean: String, _ arguments: CVarArg...) -> String {
 private enum Translations {
     static let table: [String: (en: String, ja: String)] = [
         // Connect window
-        "Pstsc — 원격 PC 연결": ("Pstsc — Connect to Remote PC", "Pstsc — リモート PC に接続"),
+        "kkguai — 원격 PC 연결": ("kkguai — Connect to Remote PC", "kkguai — リモート PC に接続"),
         "원격 PC 주소": ("Remote PC address", "リモート PC のアドレス"),
         "사용자": ("User", "ユーザー"),
         "비밀번호": ("Password", "パスワード"),
@@ -74,10 +74,26 @@ private enum Translations {
             "Mac のホームフォルダーをリモート PC と共有(「Mac」ドライブ)"),
         "실행하면 자동 연결 (키체인에 저장)": (
             "Connect Automatically at Launch (Saved in Keychain)", "起動時に自動接続(キーチェーンに保存)"),
-        "로그인 시 Pstsc 열기": ("Open Pstsc at Login", "ログイン時に Pstsc を開く"),
+        "로그인 시 kkguai 열기": ("Open kkguai at Login", "ログイン時に kkguai を開く"),
         "Launchpad 앱 폴더 열기": ("Open Launchpad Apps Folder", "Launchpad 用アプリのフォルダーを開く"),
         "원격 PC 리소스 사용량…": ("Remote PC Resource Usage…", "リモート PC のリソース使用量…"),
         "원격 PC 리소스 사용량": ("Remote PC Resource Usage", "リモート PC のリソース使用量"),
+        // Updates
+        "업데이트 확인 중…": ("Checking for Updates…", "アップデートを確認中…"),
+        "최신 버전입니다.": ("You're up to date.", "最新バージョンです。"),
+        "현재 버전 %@": ("Current version %@", "現在のバージョン %@"),
+        "업데이트를 확인하지 못했습니다.": ("Couldn't check for updates.", "アップデートを確認できませんでした。"),
+        "새 버전 %@ 사용 가능": ("Version %@ is available", "新バージョン %@ が利用可能"),
+        "다운로드 및 설치": ("Download and Install", "ダウンロードしてインストール"),
+        "나중에": ("Later", "後で"),
+        "다운로드 중… %d%%": ("Downloading… %d%%", "ダウンロード中… %d%%"),
+        "업데이트를 설치하지 못했습니다.": ("Couldn't install the update.", "アップデートをインストールできませんでした。"),
+        "%@ 설치를 위해 다시 시작합니다.": ("Restarting to install %@.", "インストールのため再起動します。"),
+        "앱이 종료되면 새 버전으로 교체되고 자동으로 다시 열립니다.": ("The app will quit, be replaced, and reopen automatically.", "アプリを終了して新しいバージョンに置き換え、自動で開き直します。"),
+        "지금 재시작": ("Restart Now", "今すぐ再起動"),
+        "GitHub 응답을 이해하지 못했습니다.": ("Couldn't read GitHub's response.", "GitHub の応答を解釈できませんでした。"),
+        "이 릴리스에 macOS 설치 파일이 없습니다.": ("This release has no macOS installer.", "このリリースには macOS 版のインストーラがありません。"),
+        "설치 파일을 확인하지 못했습니다.": ("The update file failed its signature check.", "アップデートファイルの署名確認に失敗しました。"),
         // Feedback window
         "피드백 보내기…": ("Send Feedback…", "フィードバックを送る…"),
         "업데이트 확인…": ("Check for Updates…", "アップデートを確認…"),
@@ -97,7 +113,7 @@ private enum Translations {
         "또는 %@ 로 직접 보내 주세요.": ("Or email %@ directly.", "または %@ へ直接お送りください。"),
         "응답을 받지 못했습니다.": ("No response from the server.", "サーバーから応答がありません。"),
         "연결 끊기": ("Disconnect", "切断"),
-        "Pstsc 종료": ("Quit Pstsc", "Pstsc を終了"),
+        "kkguai 종료": ("Quit kkguai", "kkguai を終了"),
         "편집": ("Edit", "編集"),
         "잘라내기": ("Cut", "カット"),
         "복사": ("Copy", "コピー"),
@@ -130,9 +146,9 @@ private enum Translations {
         "원격 PC가 앱 창 연결을 거부했습니다. 같은 계정이 PC 앞이나 다른 원격 데스크톱에서 로그인돼 있으면 로그아웃한 뒤 다시 연결하거나, 데스크톱 모드로 넘겨받으세요. 처음 쓰는 PC라면 enable-remoteapp.reg 적용 후 재시작하세요.": (
             "The remote PC refused the app-window connection. If the same account is signed in at the PC or from another remote desktop, sign out there and reconnect, or take it over in desktop mode. On a new PC, apply enable-remoteapp.reg and restart.",
             "リモート PC がアプリウィンドウ接続を拒否しました。同じアカウントが PC の前や別のリモートデスクトップでサインインしている場合は、サインアウトしてから再接続するか、デスクトップモードで引き継いでください。初めての PC では enable-remoteapp.reg を適用して再起動してください。"),
-        "이 원격 PC는 아직 Pstsc 연결 준비가 되어 있지 않습니다. 저장소의 enable-remoteapp.reg를 원격 PC에서 실행하고 재시작한 뒤 다시 연결하세요.": (
-            "This remote PC isn't set up for Pstsc yet. Run enable-remoteapp.reg from the repository on the remote PC, restart it, then connect again.",
-            "このリモート PC はまだ Pstsc 接続の準備ができていません。リポジトリの enable-remoteapp.reg をリモート PC で実行し、再起動してから再接続してください。"),
+        "이 원격 PC는 아직 kkguai 연결 준비가 되어 있지 않습니다. 저장소의 enable-remoteapp.reg를 원격 PC에서 실행하고 재시작한 뒤 다시 연결하세요.": (
+            "This remote PC isn't set up for kkguai yet. Run enable-remoteapp.reg from the repository on the remote PC, restart it, then connect again.",
+            "このリモート PC はまだ kkguai 接続の準備ができていません。リポジトリの enable-remoteapp.reg をリモート PC で実行し、再起動してから再接続してください。"),
         "원격 PC에서 RemoteApp이 허용되어 있지 않습니다. enable-remoteapp.reg를 적용하세요.": (
             "RemoteApp isn't allowed on the remote PC. Apply enable-remoteapp.reg.",
             "リモート PC で RemoteApp が許可されていません。enable-remoteapp.reg を適用してください。"),
@@ -143,15 +159,15 @@ private enum Translations {
             "Check the RemoteApp setting on the remote PC and the program path.",
             "リモート PC の RemoteApp の許可設定とプログラムのパスを確認してください。"),
         "로그인 항목을 바꾸지 못했습니다": ("Couldn't change the login item", "ログイン項目を変更できませんでした"),
-        "응용 프로그램 폴더의 Pstsc.app으로 실행했을 때만 설정할 수 있습니다.\n%@": (
-            "This only works when Pstsc runs as Pstsc.app from the Applications folder.\n%@",
-            "アプリケーションフォルダーの Pstsc.app として起動したときだけ設定できます。\n%@"),
+        "응용 프로그램 폴더의 kkguai.app으로 실행했을 때만 설정할 수 있습니다.\n%@": (
+            "This only works when kkguai runs as kkguai.app from the Applications folder.\n%@",
+            "アプリケーションフォルダーの kkguai.app として起動したときだけ設定できます。\n%@"),
         "앱 창 모드로 연결된 상태에서만 측정할 수 있습니다.": (
             "Measuring works only while connected in app window mode.",
             "アプリウィンドウモードで接続しているときだけ測定できます。"),
-        "Pstsc 연결 세션의 프로세스와 원격 데스크톱 서비스를 3초 동안 측정했습니다.": (
-            "Measured the processes of the Pstsc session and the Remote Desktop service over 3 seconds.",
-            "Pstsc の接続セッションのプロセスとリモートデスクトップサービスを 3 秒間測定しました。"),
+        "kkguai 연결 세션의 프로세스와 원격 데스크톱 서비스를 3초 동안 측정했습니다.": (
+            "Measured the processes of the kkguai session and the Remote Desktop service over 3 seconds.",
+            "kkguai の接続セッションのプロセスとリモートデスクトップサービスを 3 秒間測定しました。"),
         "원격 프로그램 실행": ("Run Remote Program", "リモートのプログラムを実行"),
         "원격 PC에 있는 실행 파일의 전체 경로를 입력하세요.": (
             "Enter the full path of the program on the remote PC.",
@@ -175,14 +191,14 @@ private enum Translations {
         "원격 PC의 기존 세션을 로그아웃할까요?": (
             "Sign out the existing session on the remote PC?", "リモート PC の既存セッションをサインアウトしますか?"),
         "원격 PC의 기존 세션을 화면에 띄웁니다. 저장할 것을 저장한 뒤 시작 → 로그아웃을 누르면 앱 창 모드로 다시 연결합니다. 로그아웃하면 그 세션의 프로그램은 모두 닫힙니다.": (
-            "Pstsc shows the existing session on the remote PC. Save your work and choose Start → Sign out; Pstsc then reconnects in app mode. Signing out closes every program in that session.",
+            "kkguai shows the existing session on the remote PC. Save your work and choose Start → Sign out; kkguai then reconnects in app mode. Signing out closes every program in that session.",
             "リモート PC の既存セッションを表示します。保存してからスタート → サインアウトを選ぶと、アプリウィンドウモードで再接続します。サインアウトするとそのセッションのプログラムはすべて閉じます。"),
         "계속": ("Continue", "続行"),
         "기존 세션을 로그아웃하지 못했습니다. 원격 PC에서 직접 로그아웃한 뒤 다시 연결하세요.": (
             "Couldn't sign out the existing session. Sign out on the remote PC yourself, then connect again.",
             "既存セッションをサインアウトできませんでした。リモート PC で直接サインアウトしてから再接続してください。"),
         "원격 화면에서 저장할 것을 저장한 뒤 시작 → 로그아웃을 누르세요. 로그아웃되면 앱 창 모드로 자동 연결합니다.": (
-            "Save your work on the remote screen, then choose Start → Sign out. Pstsc reconnects in app mode once you're signed out.",
+            "Save your work on the remote screen, then choose Start → Sign out. kkguai reconnects in app mode once you're signed out.",
             "リモート画面で必要なものを保存してから、スタート → サインアウトを選んでください。サインアウトするとアプリウィンドウモードで自動接続します。"),
         "다른 PC로 연결…": ("Connect to Another PC…", "別の PC に接続…"),
         "연결을 누르면 지금 연결이 끊기고 새 PC로 연결합니다.": (

@@ -55,6 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private var shareHomeItem: NSMenuItem?
     private var loginItemItem: NSMenuItem?
     private var autoConnectItem: NSMenuItem?
+    private var updateItem: NSMenuItem?
+    private var updateInProgress = false
     private let launchers = LauncherController()
     private lazy var feedbackWindow = FeedbackWindowController()
 
@@ -679,7 +681,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         // program failing is usually a bad path. Code 3 = not in the allow list.
         if isHelper {
             tearDownSession()
-            connectWindow.setBusy(false, status: L("이 원격 PC는 아직 Pstsc 연결 준비가 되어 있지 않습니다. 저장소의 enable-remoteapp.reg를 원격 PC에서 실행하고 재시작한 뒤 다시 연결하세요."))
+            connectWindow.setBusy(false, status: L("이 원격 PC는 아직 kkguai 연결 준비가 되어 있지 않습니다. 저장소의 enable-remoteapp.reg를 원격 PC에서 실행하고 재시작한 뒤 다시 연결하세요."))
             connectWindow.showWindow(nil)
             NSApp.activate()
             return
@@ -728,16 +730,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
                                         action: #selector(toggleShareHome), keyEquivalent: "")
         autoConnectItem = appMenu.addItem(withTitle: L("실행하면 자동 연결 (키체인에 저장)"),
                                           action: #selector(toggleAutoConnect), keyEquivalent: "")
-        loginItemItem = appMenu.addItem(withTitle: L("로그인 시 Pstsc 열기"), action: #selector(toggleLoginItem), keyEquivalent: "")
+        loginItemItem = appMenu.addItem(withTitle: L("로그인 시 kkguai 열기"), action: #selector(toggleLoginItem), keyEquivalent: "")
         appMenu.addItem(withTitle: L("Launchpad 앱 폴더 열기"), action: #selector(openLaunchersFolder), keyEquivalent: "")
         appMenu.addItem(withTitle: L("원격 PC 리소스 사용량…"), action: #selector(showRemoteResources), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("피드백 보내기…"), action: #selector(showFeedback), keyEquivalent: "")
-        appMenu.addItem(withTitle: L("업데이트 확인…"), action: #selector(checkForUpdates), keyEquivalent: "")
+        updateItem = appMenu.addItem(withTitle: L("업데이트 확인…"), action: #selector(checkForUpdates), keyEquivalent: "")
         updateToggleItems()
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("연결 끊기"), action: #selector(disconnect), keyEquivalent: "")
-        appMenu.addItem(withTitle: L("Pstsc 종료"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: L("kkguai 종료"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
 
@@ -792,7 +794,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         if let error = LoginItem.setEnabled(!LoginItem.isEnabled) {
             let alert = NSAlert()
             alert.messageText = L("로그인 항목을 바꾸지 못했습니다")
-            alert.informativeText = L("응용 프로그램 폴더의 Pstsc.app으로 실행했을 때만 설정할 수 있습니다.\n%@", error)
+            alert.informativeText = L("응용 프로그램 폴더의 kkguai.app으로 실행했을 때만 설정할 수 있습니다.\n%@", error)
             alert.runModal()
         }
         updateToggleItems()
@@ -810,10 +812,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Opens the releases page in the default browser; the page itself shows whether a newer
-    /// version exists, so the app never needs to call the GitHub API.
+    // MARK: Updates
+
+    /// Asks GitHub for the newest release and, with one click, downloads and installs it.
     @objc private func checkForUpdates() {
-        NSWorkspace.shared.open(URL(string: "https://github.com/kkguai666/kkguai/releases/latest")!)
+        guard !updateInProgress else { return }
+        updateItem?.title = L("업데이트 확인 중…")
+        updateItem?.isEnabled = false
+        Updater.shared.check { [weak self] result in
+            guard let self else { return }
+            self.updateItem?.title = L("업데이트 확인…")
+            self.updateItem?.isEnabled = true
+            switch result {
+            case .failure(let error):
+                self.showSimpleAlert(L("업데이트를 확인하지 못했습니다."), error.localizedDescription)
+            case .success(nil):
+                self.showSimpleAlert(L("최신 버전입니다."), L("현재 버전 %@", Updater.currentVersion))
+            case .success(let release?):
+                self.offerUpdate(release)
+            }
+        }
+    }
+
+    private func offerUpdate(_ release: Updater.Release) {
+        let alert = NSAlert()
+        alert.messageText = L("새 버전 %@ 사용 가능", release.version)
+        alert.informativeText = String(release.notes.prefix(1500))
+        alert.addButton(withTitle: L("다운로드 및 설치"))
+        alert.addButton(withTitle: L("나중에"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        updateInProgress = true
+        updateItem?.isEnabled = false
+        Updater.shared.download(release, progress: { [weak self] fraction in
+            self?.updateItem?.title = L("다운로드 중… %d%%", Int32(fraction * 100))
+        }) { [weak self] result in
+            guard let self else { return }
+            self.updateInProgress = false
+            self.updateItem?.title = L("업데이트 확인…")
+            self.updateItem?.isEnabled = true
+            switch result {
+            case .failure(let error):
+                self.showSimpleAlert(L("업데이트를 설치하지 못했습니다."), error.localizedDescription)
+            case .success(let dmg):
+                let confirm = NSAlert()
+                confirm.messageText = L("%@ 설치를 위해 다시 시작합니다.", release.version)
+                confirm.informativeText = L("앱이 종료되면 새 버전으로 교체되고 자동으로 다시 열립니다.")
+                confirm.addButton(withTitle: L("지금 재시작"))
+                confirm.addButton(withTitle: L("나중에"))
+                guard confirm.runModal() == .alertFirstButtonReturn else { return }
+                do {
+                    try Updater.installAndRelaunch(dmg: dmg)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { NSApp.terminate(nil) }
+                } catch {
+                    self.showSimpleAlert(L("업데이트를 설치하지 못했습니다."), error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func showSimpleAlert(_ message: String, _ details: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.informativeText = details
+        alert.addButton(withTitle: L("확인"))
+        alert.runModal()
     }
 
     /// Runs the fixed resources.ps1 on the remote PC and logs (and optionally shows) its report.
@@ -854,7 +918,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         scroll.hasVerticalScroller = true
         let alert = NSAlert()
         alert.messageText = L("원격 PC 리소스 사용량")
-        alert.informativeText = L("Pstsc 연결 세션의 프로세스와 원격 데스크톱 서비스를 3초 동안 측정했습니다.")
+        alert.informativeText = L("kkguai 연결 세션의 프로세스와 원격 데스크톱 서비스를 3초 동안 측정했습니다.")
         alert.accessoryView = scroll
         NSApp.activate()
         alert.runModal()

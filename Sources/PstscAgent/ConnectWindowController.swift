@@ -32,7 +32,7 @@ final class ConnectWindowController: NSWindowController {
     init() {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 230),
                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = L("Pstsc — 원격 PC 연결")
+        window.title = L("kkguai — 원격 PC 연결")
         super.init(window: window)
 
         let defaults = UserDefaults.standard
