@@ -48,6 +48,7 @@ kkguai 是一款面向 macOS 的开源 RemoteApp 客户端。它连接你已有�
 | 快捷键 | Mac 键盘直通，左 Command 映射为 Ctrl，常用快捷键符合 Mac 习惯 |
 | 界面语言 | 中文 / English / 日本語 / 한국어，跟随 Mac 的系统语言 |
 | 连接自愈 | 网络看门狗盯着连接；菜单栏显示状态，断线后点一下就重连 |
+| 应用优化 | 每个远程程序单独设刷新方式（自动 / 流畅 / 省电），播放器默认流畅；可设「打开时保持最前面」，重连后仍记得 |
 | 窗口管理 | 铺满屏幕、窗口置顶、移到下一块显示器；每台电脑记住自己的窗口位置 |
 | 剪贴板 | Mac 和 Windows 之间双向复制粘贴文字 |
 | 工作区 | 把正在跑的一套应用存成名字，之后一键全部打开并回到原位 |
@@ -188,6 +189,7 @@ The programs still run on that Windows PC; the Mac only displays their windows a
 | Keyboard | Mac keys pass through; left Command acts as Ctrl; familiar shortcuts keep working |
 | Interface language | Chinese / English / Japanese / Korean, following the Mac's system language |
 | Self-healing connection | A watchdog watches the session; the menu bar shows its state and one click reconnects |
+| Per-app optimisation | Each remote program gets its own refresh mode (Automatic / Smooth / Power saver), players default to Smooth, and an always-on-top default is remembered across reconnects |
 | Window management | Fill the screen, keep a window on top, move it to the next display; each PC remembers its own window layout |
 | Clipboard | Copy and paste text in both directions between the Mac and Windows |
 | Workspaces | Save the set of apps you have open under a name, then reopen all of them in place with one click |
