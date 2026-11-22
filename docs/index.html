@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>kkguai — 把 Windows 程序变成 Mac 原生窗口</title>
+<title>kkguai — 把 Windows 程序变成 Mac 原生窗口 / Run Windows apps as native Mac windows</title>
 <meta name="description" content="kkguai 是一款免费开源的 macOS RemoteApp 客户端：连接你已有的 Windows 电脑，让每个 Windows 程序变成 Mac 上的原生窗口。不用虚拟机，不用整块远程桌面，也不用买 Parallels。">
 <link rel="canonical" href="https://kkguai666.github.io/kkguai/">
 <meta property="og:type" content="website">
@@ -418,41 +418,41 @@
     </div>
 
     <div class="wrap stage-wrap">
-      <div class="stage" id="stage" role="img" aria-label="Mac 桌面上并排显示三个 Windows 程序窗口，底部 Dock 中有每个程序的图标">
+      <div class="stage" id="stage" role="img" aria-label="Mac 桌面上并排显示三个 Windows 程序窗口，底部 Dock 中有每个程序的图标" data-en-aria="Three Windows app windows side by side on a Mac desktop, each with its own icon in the Dock below">
         <span class="seam" aria-hidden="true"></span>
 
         <div class="win win-1">
           <div class="win-bar">
             <span class="lights"><i></i><i></i><i></i></span>
-            <span class="win-title">未命名 — 记事本</span>
+            <span class="win-title" data-en="Untitled — Notepad">未命名 — 记事本</span>
             <span class="win-tools"></span>
           </div>
           <div class="win-body">
-            <div class="win-menu"><span>文件</span><span>编辑</span><span>查看</span></div>
-            <div class="note-text"><span class="b">kkguai</span> 把 Windows 程序<br>变成 Mac 原生窗口。<br><br>每个程序一个窗口，<br>一个 Dock 图标。<br><br>不用虚拟机，<br>也不用整块远程桌面。<span class="cursor"></span></div>
+            <div class="win-menu"><span data-en="File">文件</span><span data-en="Edit">编辑</span><span data-en="View">查看</span></div>
+            <div class="note-text"><span class="b">kkguai</span> <span data-en="turns Windows apps<br>into native Mac windows.<br><br>One window per app,<br>one Dock icon each.<br><br>No virtual machine,<br>no full remote desktop.">把 Windows 程序<br>变成 Mac 原生窗口。<br><br>每个程序一个窗口，<br>一个 Dock 图标。<br><br>不用虚拟机，<br>也不用整块远程桌面。</span><span class="cursor"></span></div>
           </div>
         </div>
 
         <div class="win win-2">
           <div class="win-bar">
             <span class="lights"><i></i><i></i><i></i></span>
-            <span class="win-title">此电脑</span>
+            <span class="win-title" data-en="This PC">此电脑</span>
             <span class="win-tools"></span>
           </div>
           <div class="ex-wrap">
             <div class="ex-side">
-              <span>快速访问</span>
-              <span>桌面</span><span>下载</span><span>文档</span><span>图片</span>
-              <span class="grp">此电脑</span>
-              <span>Windows (C:)</span><span>数据 (D:)</span>
+              <span data-en="Quick access">快速访问</span>
+              <span data-en="Desktop">桌面</span><span data-en="Downloads">下载</span><span data-en="Documents">文档</span><span data-en="Pictures">图片</span>
+              <span class="grp" data-en="This PC">此电脑</span>
+              <span data-en="Windows (C:)">Windows (C:)</span><span data-en="Data (D:)">数据 (D:)</span>
             </div>
             <div class="ex-main">
-              <span class="file folder"><i></i>项目</span>
-              <span class="file folder"><i></i>发票</span>
-              <span class="file folder"><i></i>备份</span>
-              <span class="file"><i></i>报表.xlsx</span>
-              <span class="file"><i></i>合同.docx</span>
-              <span class="file"><i></i>说明.txt</span>
+              <span class="file folder"><i></i><span data-en="Projects">项目</span></span>
+              <span class="file folder"><i></i><span data-en="Invoices">发票</span></span>
+              <span class="file folder"><i></i><span data-en="Backups">备份</span></span>
+              <span class="file"><i></i><span data-en="Report.xlsx">报表.xlsx</span></span>
+              <span class="file"><i></i><span data-en="Contract.docx">合同.docx</span></span>
+              <span class="file"><i></i><span data-en="Readme.txt">说明.txt</span></span>
             </div>
           </div>
         </div>
@@ -460,11 +460,11 @@
         <div class="win win-3">
           <div class="win-bar">
             <span class="lights"><i></i><i></i><i></i></span>
-            <span class="win-title">计算器</span>
+            <span class="win-title" data-en="Calculator">计算器</span>
             <span class="win-tools"></span>
           </div>
           <div class="calc">
-            <div class="calc-head">标准</div>
+            <div class="calc-head" data-en="Standard">标准</div>
             <div class="calc-screen">1,024</div>
             <div class="calc-grid">
               <b>%</b><b>CE</b><b>C</b><b class="op">⌫</b>
@@ -602,7 +602,7 @@
       <div class="steps">
         <div class="step">
           <h3 data-en="Turn on Remote Desktop on Windows">在 Windows 上打开远程桌面</h3>
-          <p data-en="Run these two lines in an administrator PowerShell, then import enable-remoteapp.reg from the release (administrator, required). Windows Home cannot host RDP.">在管理员 PowerShell 里运行下面两行，再导入 Release 里的 <code>enable-remoteapp.reg</code>（管理员权限，必需）。<code>Windows 家庭版不能做 RDP 主机</code>。</p>
+          <p data-en="Run these two lines in an administrator PowerShell, then import <code>enable-remoteapp.reg</code> from the release (administrator, required). <code>Windows Home cannot host RDP</code>.">在管理员 PowerShell 里运行下面两行，再导入 Release 里的 <code>enable-remoteapp.reg</code>（管理员权限，必需）。<code>Windows 家庭版不能做 RDP 主机</code>。</p>
         </div>
         <div class="step">
           <h3 data-en="Install kkguai on the Mac">在 Mac 上装 kkguai</h3>
@@ -618,7 +618,7 @@
         <div class="code-head"><span class="file-name" data-en="Windows · Administrator PowerShell">Windows · 管理员 PowerShell</span>
           <button class="copy-btn" type="button" data-copy="code-win" data-en="Copy">复制</button>
         </div>
-        <pre id="code-win"><span class="c"># 允许远程桌面，并放行防火墙（语言无关的规则组 ID）</span>
+        <pre id="code-win"><span class="c" data-en="# Enable Remote Desktop and allow it through the firewall"># 允许远程桌面，并放行防火墙（语言无关的规则组 ID）</span>
 <span class="p">Set-ItemProperty</span> 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
 <span class="p">Enable-NetFirewallRule</span> -Group '@FirewallAPI.dll,-28752'</pre>
       </div>
@@ -627,7 +627,7 @@
         <div class="code-head"><span class="file-name">macOS · Terminal</span>
           <button class="copy-btn" type="button" data-copy="code-mac" data-en="Copy">复制</button>
         </div>
-        <pre id="code-mac"><span class="c"># 首次打开前去掉隔离标记（只需一次）</span>
+        <pre id="code-mac"><span class="c" data-en="# Remove the quarantine flag once, before the first launch"># 首次打开前去掉隔离标记（只需一次）</span>
 <span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app
 <span class="p">open</span> /Applications/kkguai.app</pre>
       </div>
@@ -715,13 +715,32 @@
     try { stored = localStorage.getItem('kkguai-lang'); } catch (e) {}
     var initial = stored || ((navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh');
 
+    var metaDesc = document.querySelector('meta[name="description"]');
+    var copy = {
+      zh: {
+        title: document.title,
+        desc: metaDesc ? metaDesc.getAttribute('content') : ''
+      },
+      en: {
+        title: 'kkguai — Run Windows apps as native Mac windows',
+        desc: 'kkguai is a free, open-source RemoteApp client for macOS: every Windows app opens as its own native Mac window. No virtual machine, no full remote desktop, no Parallels subscription.'
+      }
+    };
+
     function applyLang(lang) {
+      var c = copy[lang] || copy.zh;
       root.dataset.lang = lang;
       root.lang = lang === 'en' ? 'en' : 'zh-CN';
       document.querySelectorAll('[data-en]').forEach(function (el) {
-        if (!el.dataset.zh) el.dataset.zh = el.textContent;
-        el.textContent = lang === 'en' ? el.dataset.en : el.dataset.zh;
+        if (!el.dataset.zhHtml) el.dataset.zhHtml = el.innerHTML;
+        el.innerHTML = lang === 'en' ? el.getAttribute('data-en') : el.dataset.zhHtml;
       });
+      document.querySelectorAll('[data-en-aria]').forEach(function (el) {
+        if (!el.dataset.zhAria) el.dataset.zhAria = el.getAttribute('aria-label') || '';
+        el.setAttribute('aria-label', lang === 'en' ? el.getAttribute('data-en-aria') : el.dataset.zhAria);
+      });
+      document.title = c.title;
+      if (metaDesc) metaDesc.setAttribute('content', c.desc);
       btn.textContent = lang === 'en' ? '中文' : 'EN';
       btn.setAttribute('aria-label', lang === 'en' ? '切换到中文' : 'Switch to English');
       try { localStorage.setItem('kkguai-lang', lang); } catch (e) {}
