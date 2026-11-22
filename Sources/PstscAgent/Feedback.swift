@@ -114,6 +114,8 @@ final class FeedbackWindowController: NSWindowController, NSTextViewDelegate {
     private let contactField = NSTextField()
     private let statusLabel = NSTextField(labelWithString: "")
     private let sendButton = NSButton(title: L("보내기"), target: nil, action: nil)
+    private let diagnosticsBox = NSButton(checkboxWithTitle: L("진단 정보 첨부 (버전, 연결 상태, 최근 로그)"),
+                                          target: nil, action: nil)
     private let sender = FeedbackSender()
     private var sending = false
 
@@ -168,13 +170,14 @@ final class FeedbackWindowController: NSWindowController, NSTextViewDelegate {
         footer.alignment = .centerY
         statusLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let stack = NSStackView(views: [hint, scroll, contactField, privacy, footer])
+        diagnosticsBox.state = .off
+        let stack = NSStackView(views: [hint, scroll, contactField, diagnosticsBox, privacy, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        for view in [scroll, contactField, footer, hint, privacy] as [NSView] {
+        for view in [scroll, contactField, diagnosticsBox, footer, hint, privacy] as [NSView] {
             view.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -40).isActive = true
         }
 
@@ -215,7 +218,11 @@ final class FeedbackWindowController: NSWindowController, NSTextViewDelegate {
         sendButton.title = L("보내는 중…")
         statusLabel.stringValue = ""
 
-        let payload = FeedbackPayload(message: message,
+        var body = message
+        if diagnosticsBox.state == .on {
+            body += "\n\n---\n" + Diagnostics.snapshot()
+        }
+        let payload = FeedbackPayload(message: body,
                                       contact: contactField.stringValue.trimmingCharacters(in: .whitespaces))
         sender.send(payload) { [weak self] result in
             guard let self else { return }

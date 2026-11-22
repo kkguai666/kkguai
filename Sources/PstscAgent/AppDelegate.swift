@@ -71,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Diagnostics.installLogCapture()
         UserDefaults.standard.register(defaults: [Pref.shareHome: true])
         NSApp.applicationIconImage = DockIcon.make()
         buildMenus()
@@ -845,6 +846,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         appMenu.addItem(withTitle: L("원격 PC 리소스 사용량…"), action: #selector(showRemoteResources), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("피드백 보내기…"), action: #selector(showFeedback), keyEquivalent: "")
+        appMenu.addItem(withTitle: L("진단 정보 저장…"), action: #selector(saveDiagnostics), keyEquivalent: "")
         updateItem = appMenu.addItem(withTitle: L("업데이트 확인…"), action: #selector(checkForUpdates), keyEquivalent: "")
         updateToggleItems()
         appMenu.addItem(.separator())
@@ -915,6 +917,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     /// Feedback is read by the maintainer even when no remote PC is connected, so it is always available.
+    /// Drops a zip with the log and a state report on the Desktop; nothing leaves the Mac.
+    @objc private func saveDiagnostics() {
+        var extra: [String: String] = [
+            "Host": credentials?.host ?? "(none)",
+            "User": credentials?.username ?? "(none)",
+            "Connected": ready ? "yes" : "no",
+            "Mode": mode == .apps ? "apps" : "desktop",
+            "Remote windows": String(windowManager?.windows.count ?? 0),
+            "Reconnecting": reconnectWork == nil ? "no" : "yes",
+        ]
+        switch watchdog.state {
+        case .reachable(let ms): extra["Remote PC"] = "reachable, \(ms) ms"
+        case .checking: extra["Remote PC"] = "checking"
+        case .unreachable: extra["Remote PC"] = "unreachable"
+        case .idle: extra["Remote PC"] = "idle"
+        }
+        guard let zip = Diagnostics.saveBundle(extra: extra) else {
+            showSimpleAlert(L("진단 정보를 저장하지 못했습니다."), "")
+            return
+        }
+        NSWorkspace.shared.activateFileViewerSelecting([zip])
+        showSimpleAlert(L("진단 정보를 저장했습니다."), zip.path)
+    }
+
     @objc private func showFeedback() {
         feedbackWindow.prepareToShow()
         feedbackWindow.showWindow(nil)
