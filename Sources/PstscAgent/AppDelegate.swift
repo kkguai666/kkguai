@@ -59,6 +59,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private var updateInProgress = false
     private let launchers = LauncherController()
     private lazy var feedbackWindow = FeedbackWindowController()
+    /// ⌥Space opens the remote Start menu from any app; ⌥` cycles the open remote windows.
+    private var launcherHotKey: GlobalHotKey?
+    private var windowCycleHotKey: GlobalHotKey?
 
     private enum Pref {
         static let shareHome = "shareHomeFolder"
@@ -108,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         startMenu.onLaunch = { [weak self] app in self?.launch(app) }
         startMenu.onPower = { [weak self] action in self?.perform(action) }
         setUpProgramDock()
+        setUpHotKeys()
         setUpNotifications()
 
         // Launchpad/Spotlight launchers ask a running Pstsc to start an app.
@@ -152,6 +156,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     private func launch(appID: String) {
         launch(remoteApp(forID: appID))
+    }
+
+    // MARK: Global hotkeys
+
+    private func setUpHotKeys() {
+        // ⌥Space: the remote Start menu, from any app, without touching the Dock.
+        launcherHotKey = GlobalHotKey(keyCode: GlobalHotKey.spaceKey,
+                                      carbonModifiers: GlobalHotKey.option) { [weak self] in
+            self?.showLauncher()
+        }
+        // ⌥`: jump between the remote windows that are open right now.
+        windowCycleHotKey = GlobalHotKey(keyCode: GlobalHotKey.graveKey,
+                                         carbonModifiers: GlobalHotKey.option) { [weak self] in
+            self?.cycleRemoteWindows()
+        }
+    }
+
+    @objc private func showLauncher() {
+        NSApp.activate(ignoringOtherApps: true)
+        if mode == .apps, ready {
+            startMenu.present()
+        } else if connectWindow.window?.isVisible != true {
+            showConnectWindow()
+        }
+    }
+
+    @objc private func cycleRemoteWindows() {
+        guard mode == .apps, let manager = windowManager else { return }
+        let open = manager.windows.values
+            .filter { !$0.info.isPopup && $0.hasBeenShown && $0.isVisible }
+            .sorted { $0.info.title.localizedStandardCompare($1.info.title) == .orderedAscending }
+        guard !open.isEmpty else { return }
+        let current = NSApp.keyWindow.flatMap { key in open.firstIndex { $0 === key } }
+        let next = open[((current ?? -1) + 1) % open.count]
+        NSApp.activate(ignoringOtherApps: true)
+        manager.bringToFront(next)
     }
 
     // MARK: Notifications
@@ -722,6 +762,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: L("Windows 시작"), action: #selector(openWindowsStart), keyEquivalent: "")
+        appMenu.addItem(withTitle: L("시작 메뉴 (어디서나 ⌥Space)"), action: #selector(showLauncher), keyEquivalent: "")
+        appMenu.addItem(withTitle: L("다음 원격 창 (⌥`)"), action: #selector(cycleRemoteWindows), keyEquivalent: "")
         let modeItem = appMenu.addItem(withTitle: L("Windows 데스크톱 보기"), action: #selector(toggleMode), keyEquivalent: "")
         modeMenuItem = modeItem
         appMenu.addItem(withTitle: L("경로로 원격 프로그램 실행…"), action: #selector(launchProgramByPath), keyEquivalent: "")

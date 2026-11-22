@@ -46,6 +46,7 @@ kkguai 是一款面向 macOS 的开源 RemoteApp 客户端。它连接你已有�
 | Dock 与启动 | 每个远端程序独立 Dock 图标；Windows 11 风格开始菜单；支持 Spotlight / Launchpad |
 | 多显示器 | Mac 显示器布局同步给远端，窗口可跨屏拖动 |
 | 快捷键 | Mac 键盘直通，左 Command 映射为 Ctrl，常用快捷键符合 Mac 习惯 |
+| 界面语言 | 中文 / English / 日本語 / 한국어，跟随 Mac 的系统语言 |
 | 桌面模式 | 需要时也能把整个 Windows 桌面放进一个 Mac 窗口 |
 
 ### 和常见方案比一比
@@ -124,7 +125,7 @@ Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 
 <details>
 <summary><b>怎么反馈问题或提需求？</b></summary>
-<br>菜单栏 <code>kkguai → Send Feedback…</code>（피드백 보내기）直接写给我，可以留邮箱方便回复；反馈会自动带上 app 版本、macOS 版本和界面语言。也可以开 [issue](https://github.com/kkguai666/kkguai/issues)。
+<br>菜单栏 <code>kkguai → 发送反馈…</code>直接写给我，可以留邮箱方便回复；反馈会自动带上 app 版本、macOS 版本和界面语言。也可以开 [issue](https://github.com/kkguai666/kkguai/issues)。
 </details>
 
 还有问题？看 [排障手册](https://kkguai666.github.io/kkguai/troubleshooting.html)，或开一个 [issue](https://github.com/kkguai666/kkguai/issues)。
@@ -178,6 +179,7 @@ The programs still run on that Windows PC; the Mac only displays their windows a
 | Dock and launching | A Dock icon per remote app; Windows 11-style Start menu; Spotlight / Launchpad support |
 | Multi-monitor | The Mac display layout is mirrored to the session; windows can move across screens |
 | Keyboard | Mac keys pass through; left Command acts as Ctrl; familiar shortcuts keep working |
+| Interface language | Chinese / English / Japanese / Korean, following the Mac's system language |
 | Desktop mode | Optionally show the whole Windows desktop in a single Mac window |
 
 ### How it compares
