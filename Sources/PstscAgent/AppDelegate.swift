@@ -114,6 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             self?.startMenu.updateProgress()
             self?.updateLoadingStatus()
         }
+        startMenu.paletteCommands = { [weak self] in self?.paletteCommands() ?? [] }
         startMenu.onLaunch = { [weak self] app in self?.launch(app) }
         startMenu.onPower = { [weak self] action in self?.perform(action) }
         setUpProgramDock()
@@ -184,6 +185,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
                                          carbonModifiers: GlobalHotKey.option) { [weak self] in
             self?.cycleRemoteWindows()
         }
+    }
+
+    /// Actions and open windows offered by ⌥Space in addition to Start-menu apps.
+    private func paletteCommands() -> [StartMenuController.PaletteCommand] {
+        var commands: [StartMenuController.PaletteCommand] = []
+        for window in windowManager?.appWindows ?? [] where window.isVisible && !window.info.isPopup {
+            let title = window.info.title.isEmpty ? L("(제목 없음)") : window.info.title
+            commands.append(.init(title: title) { [weak self] in
+                self?.windowManager?.bringToFront(window)
+            })
+        }
+        commands.append(.init(title: mode == .apps ? L("Windows 데스크톱 보기") : L("앱 창 모드로 돌아가기")) {
+            [weak self] in self?.toggleMode()
+        })
+        if session != nil || reconnectWork != nil {
+            commands.append(.init(title: L("연결 끊기")) { [weak self] in self?.disconnect() })
+        }
+        if credentials != nil {
+            commands.append(.init(title: L("지금 다시 연결")) { [weak self] in self?.reconnectNow() })
+        }
+        commands.append(.init(title: L("진단 정보 저장…")) { [weak self] in self?.saveDiagnostics() })
+        commands.append(.init(title: L("피드백 보내기…")) { [weak self] in self?.showFeedback() })
+        commands.append(.init(title: L("업데이트 확인…")) { [weak self] in self?.checkForUpdates() })
+        return commands
     }
 
     @objc private func toggleShareClipboard() {

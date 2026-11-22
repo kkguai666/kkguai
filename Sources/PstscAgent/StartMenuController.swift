@@ -7,6 +7,13 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         case toggleDesktop, disconnect, signOut, restart, shutDown
     }
 
+    /// Extra search results: actions and open remote windows, so ⌥Space is a command palette.
+    struct PaletteCommand {
+        let title: String
+        let run: () -> Void
+    }
+    var paletteCommands: (() -> [PaletteCommand])?
+
     var onLaunch: ((RemoteApp) -> Void)?
     var onPower: ((PowerAction) -> Void)?
     var userName = ""
@@ -20,6 +27,7 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     private enum Row {
         case header(String)
         case app(RemoteApp)
+        case command(PaletteCommand)
     }
 
     private var page: Page = .home
@@ -302,7 +310,15 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
                 let b = $1.name.trimmed.lowercased().hasPrefix(query.lowercased())
                 return a != b ? a : $0.name.localizedStandardCompare($1.name) == .orderedAscending
             }
-            rows = ranked.isEmpty ? [.header(L("'%@'에 대한 결과가 없습니다", query))] : ranked.map { .app($0) }
+            let commands = (paletteCommands?() ?? []).filter {
+                $0.title.localizedCaseInsensitiveContains(query)
+            }
+            var result: [Row] = ranked.map { .app($0) }
+            if !commands.isEmpty {
+                if !result.isEmpty { result.append(.header(L("명령"))) }
+                result += commands.map { .command($0) }
+            }
+            rows = result.isEmpty ? [.header(L("'%@'에 대한 결과가 없습니다", query))] : result
             reloadTable()
         }
         fitWindow(newPage)
@@ -443,7 +459,7 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         case #selector(NSResponder.moveUp(_:)) where page != .home:
             moveSelection(by: -1)
         case #selector(NSResponder.insertNewline(_:)):
-            if page != .home, case .app(let app)? = rows[safe: table.selectedRow] { launch(app) }
+            if page != .home { run(row: table.selectedRow) }
         case #selector(NSResponder.cancelOperation(_:)):
             cancel()
         default:
@@ -473,7 +489,20 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     // MARK: Table
 
     @objc private func tableClicked() {
-        if case .app(let app)? = rows[safe: table.clickedRow] { launch(app) }
+        run(row: table.clickedRow)
+    }
+
+    private func run(row: Int?) {
+        guard let row else { return }
+        switch rows[safe: row] {
+        case .app(let app):
+            launch(app)
+        case .command(let command):
+            close()
+            command.run()
+        default:
+            break
+        }
     }
 
     func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
@@ -495,6 +524,19 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
             label.font = .boldSystemFont(ofSize: 13)
             label.textColor = .white
             return Self.inset(label, left: 10)
+        case .command(let command):
+            let image = NSImageView(image: NSImage(systemSymbolName: "command",
+                                                   accessibilityDescription: nil) ?? NSImage())
+            image.contentTintColor = NSColor(white: 1, alpha: 0.7)
+            let label = NSTextField(labelWithString: command.title)
+            label.textColor = .white
+            label.font = .systemFont(ofSize: 13)
+            label.lineBreakMode = .byTruncatingTail
+            let stack = NSStackView(views: [image, label])
+            stack.spacing = 12
+            image.widthAnchor.constraint(equalToConstant: 26).isActive = true
+            image.heightAnchor.constraint(equalToConstant: 26).isActive = true
+            return Self.inset(stack, left: 10)
         case .app(let app):
             let image = NSImageView(image: icons.icon(for: app))
             image.contentTintColor = NSColor(white: 1, alpha: 0.7)
