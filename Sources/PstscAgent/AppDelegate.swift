@@ -509,7 +509,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             AppCatalog.prepareHelper()
             options.program = AppCatalog.helperProgram
             options.programArguments = AppCatalog.helperArguments
-            let manager = RemoteWindowManager(session: session)
+            let manager = RemoteWindowManager(session: session, host: credentials.host)
             manager.onFirstShown = { [weak self, weak session] window in
                 guard let self, let session else { return }
                 self.programs.windowShown(window, session: session)

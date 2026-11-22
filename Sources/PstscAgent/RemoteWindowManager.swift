@@ -5,6 +5,8 @@ import PstscRDP
 /// Keeps one Mac window per visible remote window, in step with the server's window orders.
 final class RemoteWindowManager: NSObject, NSWindowDelegate {
     private let session: RDPSession
+    /// Mac-side frames of remote windows, per PC and window title.
+    private let layout: WindowLayoutStore
     private(set) var windows: [UInt32: RemoteAppWindow] = [:]
     private var focusingProgrammatically = false
     /// The helper's invisible keep-alive window (see AppCatalog.helperScript): never shown here.
@@ -18,8 +20,9 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
     /// A window appeared on or left the screen (hidden to the tray, closed, …).
     var onPresenceChanged: ((UInt32) -> Void)?
 
-    init(session: RDPSession) {
+    init(session: RDPSession, host: String = "") {
         self.session = session
+        layout = WindowLayoutStore(host: host)
     }
 
     func apply(_ info: RemoteWindowInfo) {
@@ -58,6 +61,9 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
         window.refresh(from: session)
         guard !window.isVisible else { return }
         let firstTime = !window.hasBeenShown
+        if firstTime, !info.isPopup, let saved = layout.frame(for: info.title) {
+            window.restoreFrame(saved)
+        }
         if firstTime && !info.isPopup {
             // The server already decides which remote window is active; don't echo focus back.
             focusingProgrammatically = true
@@ -200,6 +206,9 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
     private func makeWindow(_ info: RemoteWindowInfo) -> RemoteAppWindow {
         let window = RemoteAppWindow(info: info, session: session)
         window.delegate = self
+        window.onFrameCommitted = { [weak self] window in
+            self?.layout.store(window.frame, title: window.info.title)
+        }
         windows[info.id] = window
         return window
     }

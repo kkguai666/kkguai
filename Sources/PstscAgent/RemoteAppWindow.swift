@@ -18,6 +18,8 @@ final class RemoteAppWindow: NSWindow {
     var isLocallyMoving = false
     /// Frame we reported after a local move; older server updates arriving meanwhile are ignored.
     private var reportedFrame: (frame: CGRect, until: Date)?
+    /// The user finished dragging or resizing this window on the Mac.
+    var onFrameCommitted: ((RemoteAppWindow) -> Void)?
 
     init(info: RemoteWindowInfo, session: RDPSession) {
         remoteId = info.id
@@ -94,11 +96,9 @@ final class RemoteAppWindow: NSWindow {
             if event.type == .leftMouseUp { stop.pointee = true }
         }
         isLocallyMoving = false
-        let screen = Self.primaryScreenFrame
-        let s = DisplayScale.value
-        let desktop = CGRect(x: (frame.minX - screen.minX) * s, y: (screen.maxY - frame.maxY) * s,
-                             width: frame.width * s, height: frame.height * s).integral
+        let desktop = Self.desktopRect(forMacFrame: frame)
         reportedFrame = (desktop, Date().addingTimeInterval(1.5))
+        onFrameCommitted?(self)
         return desktop
     }
 
@@ -131,6 +131,32 @@ final class RemoteAppWindow: NSWindow {
 
     static var primaryScreenFrame: CGRect {
         NSScreen.screens.first?.frame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
+    }
+
+    /// Moves the window to a Mac frame saved from a previous connection and tells the server,
+    /// so Windows' idea of where the window is matches what the user sees.
+    @discardableResult
+    func restoreFrame(_ saved: NSRect) -> Bool {
+        guard !info.isPopup, saved.width >= 160, saved.height >= 80,
+              NSScreen.screens.contains(where: { $0.visibleFrame.intersects(saved) }) else { return false }
+        setFrame(saved, display: false)
+        let visible = Self.desktopRect(forMacFrame: saved)
+        let left = info.frame.minX - info.origin.x
+        let top = info.frame.minY - info.origin.y
+        let right = info.origin.x + info.windowSize.width - info.frame.maxX
+        let bottom = info.origin.y + info.windowSize.height - info.frame.maxY
+        let whole = CGRect(x: visible.minX - left, y: visible.minY - top,
+                           width: visible.width + left + right, height: visible.height + top + bottom)
+        reportedFrame = (whole, Date().addingTimeInterval(1.5))
+        session.moveWindow(remoteId, to: whole)
+        return true
+    }
+
+    static func desktopRect(forMacFrame f: NSRect) -> CGRect {
+        let screen = primaryScreenFrame
+        let s = DisplayScale.value
+        return CGRect(x: (f.minX - screen.minX) * s, y: (screen.maxY - f.maxY) * s,
+                      width: f.width * s, height: f.height * s).integral
     }
 
     static func macFrame(forDesktopRect r: CGRect) -> NSRect {
