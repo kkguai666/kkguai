@@ -120,6 +120,8 @@ Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 <br>当前发布包只支持 Apple Silicon。Intel Mac 可以从源码构建，见下面的构建说明。
 </details>
 
+还有问题？看 [排障手册](docs/troubleshooting.md)，或开一个 [issue](https://github.com/kkguai666/kkguai/issues)。
+
 ## 从源码构建
 
 需要 Xcode Command Line Tools（Swift 5.9+）。
