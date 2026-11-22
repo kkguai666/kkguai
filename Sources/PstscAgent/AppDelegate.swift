@@ -53,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private let windowListMenu = NSMenu(title: L("창"))
     private var modeMenuItem: NSMenuItem?
     private var shareHomeItem: NSMenuItem?
+    private var shareClipboardItem: NSMenuItem?
     private var loginItemItem: NSMenuItem?
     private var autoConnectItem: NSMenuItem?
     private var updateItem: NSMenuItem?
@@ -68,11 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     private enum Pref {
         static let shareHome = "shareHomeFolder"
+        static let shareClipboard = "shareClipboard"
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Diagnostics.installLogCapture()
-        UserDefaults.standard.register(defaults: [Pref.shareHome: true])
+        UserDefaults.standard.register(defaults: [Pref.shareHome: true, Pref.shareClipboard: true])
         NSApp.applicationIconImage = DockIcon.make()
         buildMenus()
         connectWindow.onConnect = { [weak self] credentials, remember in
@@ -117,6 +119,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         setUpProgramDock()
         setUpHotKeys()
         setUpStatusItem()
+        ClipboardBridge.shared.onLocalText = { [weak self] text in
+            self?.session?.setClipboardText(text)
+        }
+        ClipboardBridge.shared.isEnabled = {
+            UserDefaults.standard.bool(forKey: Pref.shareClipboard)
+        }
         setUpNotifications()
 
         // Launchpad/Spotlight launchers ask a running Pstsc to start an app.
@@ -176,6 +184,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
                                          carbonModifiers: GlobalHotKey.option) { [weak self] in
             self?.cycleRemoteWindows()
         }
+    }
+
+    @objc private func toggleShareClipboard() {
+        let defaults = UserDefaults.standard
+        defaults.set(!defaults.bool(forKey: Pref.shareClipboard), forKey: Pref.shareClipboard)
+        updateToggleItems()
     }
 
     @objc private func showLauncher() {
@@ -577,6 +591,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     private func tearDownSession() {
+        ClipboardBridge.shared.stop()
         stopConnectProgress()
         let old = session
         session = nil
@@ -647,6 +662,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         ready = true
         hasBeenReady = true
         refreshStatusItem()
+        ClipboardBridge.shared.start()
         readyAt = Date()
         stopReconnecting()
         if rememberOnSuccess, let credentials {
@@ -737,6 +753,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         userEndedRemoteSession = false
         connectWindow.showWindow(nil)
         NSApp.activate()
+    }
+
+    func session(_ session: RDPSession, clipboardText text: String) {
+        guard session === self.session else { return }
+        ClipboardBridge.shared.applyRemoteText(text)
     }
 
     func session(_ session: RDPSession, windowChanged info: RemoteWindowInfo) {
@@ -839,6 +860,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         appMenu.addItem(.separator())
         shareHomeItem = appMenu.addItem(withTitle: L("Mac 홈 폴더를 원격 PC와 공유 ('Mac' 드라이브)"),
                                         action: #selector(toggleShareHome), keyEquivalent: "")
+        shareClipboardItem = appMenu.addItem(withTitle: L("Mac 클립보드 공유 (텍스트)"),
+                                             action: #selector(toggleShareClipboard), keyEquivalent: "")
         autoConnectItem = appMenu.addItem(withTitle: L("실행하면 자동 연결 (키체인에 저장)"),
                                           action: #selector(toggleAutoConnect), keyEquivalent: "")
         loginItemItem = appMenu.addItem(withTitle: L("로그인 시 kkguai 열기"), action: #selector(toggleLoginItem), keyEquivalent: "")
@@ -876,6 +899,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     private func updateToggleItems() {
         shareHomeItem?.state = UserDefaults.standard.bool(forKey: Pref.shareHome) ? .on : .off
+        shareClipboardItem?.state = UserDefaults.standard.bool(forKey: Pref.shareClipboard) ? .on : .off
         autoConnectItem?.state = UserDefaults.standard.bool(forKey: "autoConnect") ? .on : .off
         loginItemItem?.state = LoginItem.isEnabled ? .on : .off
     }

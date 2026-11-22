@@ -67,6 +67,8 @@ protocol RDPSessionDelegate: AnyObject {
     func session(_ session: RDPSession, localMoveSizeStartedFor windowId: UInt32, type: UInt16)
     /// Which program owns a window (answer to requestAppId).
     func session(_ session: RDPSession, windowId: UInt32, imageName: String, applicationId: String)
+    /// Text was copied on the remote PC; put it on the Mac clipboard.
+    func session(_ session: RDPSession, clipboardText text: String)
 }
 
 /// Remote pixels per Mac point: 2 on a Retina display. Remote coordinates are pixels everywhere;
@@ -340,6 +342,14 @@ final class RDPSession {
             }
             DispatchQueue.main.async { RemoteCursorStore.shared.update(cursor) }
         }
+        callbacks.clipboardText = { user, text, length in
+            guard let text, length > 0 else { return }
+            let units = UnsafeBufferPointer(start: text, count: Int(length))
+            let string = String(decoding: units, as: UTF16.self)
+            guard !string.isEmpty else { return }
+            let session = RDPSession.from(user)
+            DispatchQueue.main.async { session.delegate?.session(session, clipboardText: string) }
+        }
 
         guard let client = pstsc_client_new(callbacks) else { return false }
         self.client = client
@@ -472,6 +482,16 @@ final class RDPSession {
     func requestAppId(windowId: UInt32) { pstsc_request_app_id(client, windowId) }
 
     /// Tells the program behind a tray icon that the user clicked its balloon (NIN_BALLOONUSERCLICK).
+    /// Announces local clipboard text to the remote PC (answered on its next paste).
+    func setClipboardText(_ text: String) {
+        guard let client else { return }
+        var units = Array(text.utf16)
+        units.append(0)
+        units.withUnsafeBufferPointer { buffer in
+            pstsc_set_clipboard_text(client, buffer.baseAddress, UInt32(buffer.count))
+        }
+    }
+
     func clickTrayBalloon(windowId: UInt32, iconId: UInt32) {
         pstsc_notify_event(client, windowId, iconId, 0x0405)
     }

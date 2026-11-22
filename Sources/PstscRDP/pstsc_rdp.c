@@ -8,7 +8,9 @@
 
 #include <freerdp/client.h>
 #include <freerdp/client/channels.h>
+#include <freerdp/client/cliprdr.h>
 #include <freerdp/client/cmdline.h>
+#include <freerdp/channels/cliprdr.h>
 #include <freerdp/channels/rdpgfx.h>
 #include <freerdp/client/rail.h>
 #include <freerdp/client/rdpgfx.h>
@@ -64,6 +66,13 @@ struct PstscClient
 	PstscCallbacks cb;
 	rdpContext* context;
 	RailClientContext* rail;
+	/* Clipboard (text only): the channel context and the last local text, so a server request
+	 * that arrives later can still be answered. */
+	CliprdrClientContext* cliprdr;
+	bool clipReady;
+	uint16_t* localClip;
+	size_t localClipLen;
+	pthread_mutex_t clipLock;
 	pthread_t thread;
 	bool threadStarted;
 	atomic_bool connected;
@@ -614,6 +623,112 @@ static UINT on_update_window_from_surface(RdpgfxClientContext* gfx, gdiGfxSurfac
 	return CHANNEL_RC_OK;
 }
 
+
+/* ---- Clipboard (CF_UNICODETEXT only) ---- */
+
+#define PSTSC_CF_UNICODETEXT 13
+
+static void clip_send_local_format_list(PstscClient* client)
+{
+	if (!client || !client->cliprdr || !client->clipReady)
+		return;
+	pthread_mutex_lock(&client->clipLock);
+	const bool hasText = client->localClipLen > 0;
+	pthread_mutex_unlock(&client->clipLock);
+	if (!hasText)
+		return;
+	CLIPRDR_FORMAT format = { 0 };
+	format.formatId = PSTSC_CF_UNICODETEXT;
+	format.formatName = NULL;
+	CLIPRDR_FORMAT_LIST list = { 0 };
+	list.common.msgType = CB_FORMAT_LIST;
+	list.numFormats = 1;
+	list.formats = &format;
+	client->cliprdr->ClientFormatList(client->cliprdr, &list);
+}
+
+static UINT on_clip_monitor_ready(CliprdrClientContext* context, const CLIPRDR_MONITOR_READY* ready)
+{
+	(void)ready;
+	PstscClient* client = context ? context->custom : NULL;
+	if (!client)
+		return CHANNEL_RC_OK;
+	client->clipReady = true;
+	fprintf(stderr, "[pstsc] clipboard channel ready\n");
+	clip_send_local_format_list(client);
+	return CHANNEL_RC_OK;
+}
+
+/* The remote clipboard changed: if it has text, ask for it. */
+static UINT on_clip_server_format_list(CliprdrClientContext* context,
+                                       const CLIPRDR_FORMAT_LIST* list)
+{
+	PstscClient* client = context ? context->custom : NULL;
+	if (!client || !list || !client->cb.clipboardText)
+		return CHANNEL_RC_OK;
+	for (UINT32 i = 0; i < list->numFormats; i++)
+	{
+		if (list->formats[i].formatId != PSTSC_CF_UNICODETEXT)
+			continue;
+		CLIPRDR_FORMAT_DATA_REQUEST request = { 0 };
+		request.common.msgType = CB_FORMAT_DATA_REQUEST;
+		request.requestedFormatId = PSTSC_CF_UNICODETEXT;
+		return context->ClientFormatDataRequest(context, &request);
+	}
+	return CHANNEL_RC_OK;
+}
+
+/* The remote PC wants our clipboard (a paste there): answer with the cached local text. */
+static UINT on_clip_server_format_data_request(CliprdrClientContext* context,
+                                               const CLIPRDR_FORMAT_DATA_REQUEST* request)
+{
+	PstscClient* client = context ? context->custom : NULL;
+	if (!client || !request)
+		return CHANNEL_RC_OK;
+	uint16_t* copy = NULL;
+	size_t length = 0;
+	if (request->requestedFormatId == PSTSC_CF_UNICODETEXT)
+	{
+		pthread_mutex_lock(&client->clipLock);
+		length = client->localClipLen;
+		if (length > 0)
+		{
+			copy = malloc(length * sizeof(uint16_t));
+			if (copy)
+				memcpy(copy, client->localClip, length * sizeof(uint16_t));
+			else
+				length = 0;
+		}
+		pthread_mutex_unlock(&client->clipLock);
+	}
+	CLIPRDR_FORMAT_DATA_RESPONSE response = { 0 };
+	response.common.msgType = CB_FORMAT_DATA_RESPONSE;
+	response.common.msgFlags = copy ? CB_RESPONSE_OK : CB_RESPONSE_FAIL;
+	response.common.dataLen = copy ? (UINT32)(length * sizeof(uint16_t)) : 0;
+	response.requestedFormatData = (const BYTE*)copy;
+	const UINT rc = context->ClientFormatDataResponse(context, &response);
+	free(copy);
+	return rc;
+}
+
+/* The remote text arrived: hand it to the app for the Mac clipboard. */
+static UINT on_clip_server_format_data_response(CliprdrClientContext* context,
+                                                const CLIPRDR_FORMAT_DATA_RESPONSE* response)
+{
+	PstscClient* client = context ? context->custom : NULL;
+	if (!client || !response || !client->cb.clipboardText)
+		return CHANNEL_RC_OK;
+	if ((response->common.msgFlags & CB_RESPONSE_OK) == 0 || !response->requestedFormatData)
+		return CHANNEL_RC_OK;
+	size_t length = response->common.dataLen / sizeof(uint16_t);
+	const uint16_t* text = (const uint16_t*)response->requestedFormatData;
+	while (length > 0 && text[length - 1] == 0)
+		length--;
+	if (length > 0)
+		client->cb.clipboardText(client->cb.user, text, (uint32_t)length);
+	return CHANNEL_RC_OK;
+}
+
 static void on_channel_connected(void* context, const ChannelConnectedEventArgs* e)
 {
 	PstscClient* client = client_from(context);
@@ -622,6 +737,17 @@ static void on_channel_connected(void* context, const ChannelConnectedEventArgs*
 		fprintf(stderr, "[pstsc] RemoteApp channel connected\n");
 		rail_attach(client, (RailClientContext*)e->pInterface);
 		return;
+	}
+
+	if (client && strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0 && e->pInterface)
+	{
+		CliprdrClientContext* cliprdr = (CliprdrClientContext*)e->pInterface;
+		cliprdr->custom = client;
+		cliprdr->MonitorReady = on_clip_monitor_ready;
+		cliprdr->ServerFormatList = on_clip_server_format_list;
+		cliprdr->ServerFormatDataRequest = on_clip_server_format_data_request;
+		cliprdr->ServerFormatDataResponse = on_clip_server_format_data_response;
+		client->cliprdr = cliprdr;
 	}
 
 	freerdp_client_OnChannelConnectedEventHandler(context, e);
@@ -640,6 +766,12 @@ static void on_channel_disconnected(void* context, const ChannelDisconnectedEven
 	{
 		((RailClientContext*)e->pInterface)->custom = NULL;
 		client->rail = NULL;
+	}
+	else if (client && strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
+	{
+		((CliprdrClientContext*)e->pInterface)->custom = NULL;
+		client->cliprdr = NULL;
+		client->clipReady = false;
 	}
 	else
 		freerdp_client_OnChannelDisconnectedEventHandler(context, e);
@@ -965,6 +1097,7 @@ PstscClient* pstsc_client_new(PstscCallbacks callbacks)
 		return NULL;
 	client->cb = callbacks;
 	atomic_init(&client->connected, false);
+	pthread_mutex_init(&client->clipLock, NULL);
 	return client;
 }
 
@@ -1132,6 +1265,8 @@ void pstsc_client_free(PstscClient* client)
 	free(client->windows);
 	icons_clear(client);
 	free(client->icons);
+	free(client->localClip);
+	pthread_mutex_destroy(&client->clipLock);
 	free(client);
 }
 
@@ -1290,4 +1425,26 @@ void pstsc_exec(PstscClient* client, const char* program, const char* arguments)
 		                            .RemoteApplicationProgram = program,
 		                            .RemoteApplicationArguments = arguments };
 	(void)client->rail->ClientExecute(client->rail, &order);
+}
+
+void pstsc_set_clipboard_text(PstscClient* client, const uint16_t* text, uint32_t length)
+{
+	if (!client)
+		return;
+	pthread_mutex_lock(&client->clipLock);
+	free(client->localClip);
+	client->localClip = NULL;
+	client->localClipLen = 0;
+	if (text && length > 0)
+	{
+		client->localClip = malloc(((size_t)length + 1) * sizeof(uint16_t));
+		if (client->localClip)
+		{
+			memcpy(client->localClip, text, (size_t)length * sizeof(uint16_t));
+			client->localClip[length] = 0;
+			client->localClipLen = (size_t)length + 1;
+		}
+	}
+	pthread_mutex_unlock(&client->clipLock);
+	clip_send_local_format_list(client);
 }

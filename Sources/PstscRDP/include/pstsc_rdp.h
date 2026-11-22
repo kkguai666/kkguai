@@ -82,6 +82,9 @@ typedef struct
 	 * pixels == NULL means "system default arrow". */
 	void (*cursorUpdated)(void* user, uint32_t width, uint32_t height, uint32_t hotX,
 	                      uint32_t hotY, const uint8_t* rgba);
+	/* Text copied on the remote PC (UTF-16, no trailing NUL). Only fires when the remote
+	 * clipboard changes, and only for CF_UNICODETEXT. */
+	void (*clipboardText)(void* user, const uint16_t* text, uint32_t length);
 } PstscCallbacks;
 
 /* One local display, in Windows screen coordinates: primary at (0, 0), others relative to it. */
@@ -163,6 +166,9 @@ void pstsc_notify_event(PstscClient* client, uint32_t windowId, uint32_t iconId,
 void pstsc_request_app_id(PstscClient* client, uint32_t windowId);
 /* arguments may be NULL. */
 void pstsc_exec(PstscClient* client, const char* program, const char* arguments);
+
+/* Announces local clipboard text (UTF-16) to the remote PC. Sent on the next clipboard request. */
+void pstsc_set_clipboard_text(PstscClient* client, const uint16_t* text, uint32_t length);
 
 #ifdef __cplusplus
 }
