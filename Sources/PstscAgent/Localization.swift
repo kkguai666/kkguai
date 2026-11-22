@@ -78,6 +78,23 @@ private enum Translations {
         "Launchpad 앱 폴더 열기": ("Open Launchpad Apps Folder", "Launchpad 用アプリのフォルダーを開く"),
         "원격 PC 리소스 사용량…": ("Remote PC Resource Usage…", "リモート PC のリソース使用量…"),
         "원격 PC 리소스 사용량": ("Remote PC Resource Usage", "リモート PC のリソース使用量"),
+        // Feedback window
+        "피드백 보내기…": ("Send Feedback…", "フィードバックを送る…"),
+        "kkguai — 피드백 보내기": ("kkguai — Send Feedback", "kkguai — フィードバック"),
+        "불편한 점이나 원하는 기능을 알려 주세요. 모든 메시지를 읽습니다.":
+            ("Tell us what is broken or what you want. Every message is read.",
+             "不具合や欲しい機能を教えてください。すべて読んでいます。"),
+        "답장 받을 이메일 (선택)": ("Your email for a reply (optional)", "返信先メール (任意)"),
+        "앱 버전, macOS 버전, 언어만 함께 전송됩니다.":
+            ("Only the app version, macOS version and language are sent along.", "アプリのバージョン、macOS のバージョン、言語のみ同送されます。"),
+        "보내기": ("Send", "送信"),
+        "보내는 중…": ("Sending…", "送信中…"),
+        "내용을 입력하세요.": ("Please write a message.", "内容を入力してください。"),
+        "감사합니다! 피드백을 보냈습니다.": ("Thank you! Your feedback was sent.", "ありがとうございます。フィードバックを送信しました。"),
+        "피드백 수신 주소가 설정되지 않았습니다.": ("No feedback address is configured.", "フィードバックの受信先が設定されていません。"),
+        "보내지 못했습니다: %@": ("Could not send: %@", "送信できませんでした: %@"),
+        "또는 %@ 로 직접 보내 주세요.": ("Or email %@ directly.", "または %@ へ直接お送りください。"),
+        "응답을 받지 못했습니다.": ("No response from the server.", "サーバーから応答がありません。"),
         "연결 끊기": ("Disconnect", "切断"),
         "Pstsc 종료": ("Quit Pstsc", "Pstsc を終了"),
         "편집": ("Edit", "編集"),

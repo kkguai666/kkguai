@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private var loginItemItem: NSMenuItem?
     private var autoConnectItem: NSMenuItem?
     private let launchers = LauncherController()
+    private lazy var feedbackWindow = FeedbackWindowController()
 
     private enum Pref {
         static let shareHome = "shareHomeFolder"
@@ -730,6 +731,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         loginItemItem = appMenu.addItem(withTitle: L("로그인 시 Pstsc 열기"), action: #selector(toggleLoginItem), keyEquivalent: "")
         appMenu.addItem(withTitle: L("Launchpad 앱 폴더 열기"), action: #selector(openLaunchersFolder), keyEquivalent: "")
         appMenu.addItem(withTitle: L("원격 PC 리소스 사용량…"), action: #selector(showRemoteResources), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: L("피드백 보내기…"), action: #selector(showFeedback), keyEquivalent: "")
         updateToggleItems()
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("연결 끊기"), action: #selector(disconnect), keyEquivalent: "")
@@ -796,6 +799,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     @objc private func showRemoteResources() {
         runResourceReport(showResult: true)
+    }
+
+    /// Feedback is read by the maintainer even when no remote PC is connected, so it is always available.
+    @objc private func showFeedback() {
+        feedbackWindow.prepareToShow()
+        feedbackWindow.showWindow(nil)
+        feedbackWindow.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     /// Runs the fixed resources.ps1 on the remote PC and logs (and optionally shows) its report.
