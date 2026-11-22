@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to run Windows apps on a Mac without a virtual machine — RemoteApp guide · kkguai</title>
+<meta name="description" content="No Parallels, no virtual machine: use the RemoteApp capability built into Windows and give every Windows program its own native Mac window. The full path from enabling Remote Desktop and importing enable-remoteapp.reg to your first app window.">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to run Windows apps on a Mac without a virtual machine">
+<meta property="og:description" content="A RemoteApp guide: enabling Remote Desktop, importing enable-remoteapp.reg, and opening your first Windows app window on macOS. Free and open source.">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social-en.png">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to run Windows apps on a Mac without a virtual machine">
+<meta name="twitter:description" content="A RemoteApp guide: from enabling Remote Desktop to your first Windows app window on macOS.">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social-en.png">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/guide.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Article","@id":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html#article","headline":"How to run Windows apps on a Mac without a virtual machine — RemoteApp guide","description":"No Parallels, no virtual machine: use the RemoteApp capability built into Windows and give every Windows program its own native Mac window.","url":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html"},"inLanguage":"en","datePublished":"2026-11-23","dateModified":"2026-11-23","image":"https://kkguai666.github.io/kkguai/assets/social-en.png","author":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"publisher":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"about":{"@type":"SoftwareApplication","name":"kkguai","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 14+ (Apple Silicon)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
+{"@type":"HowTo","@id":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html#howto","name":"Open your first Windows RemoteApp window on a Mac","description":"Use your existing Windows 10/11 Pro PC and the free kkguai client to turn individual Windows programs into native Mac windows.","totalTime":"PT10M","tool":[{"@type":"HowToTool","name":"kkguai for macOS"},{"@type":"HowToTool","name":"enable-remoteapp.reg"}],"step":[
+{"@type":"HowToStep","name":"Check your Windows edition","text":"You need Windows 10/11 Pro or Enterprise, or Windows Server. Windows Home cannot host Remote Desktop."},
+{"@type":"HowToStep","name":"Enable Remote Desktop and the firewall rule","text":"In an administrator PowerShell, set fDenyTSConnections to 0 and enable the Remote Desktop firewall rule group."},
+{"@type":"HowToStep","name":"Import enable-remoteapp.reg","text":"Import enable-remoteapp.reg from the release as administrator (required), optionally single-session.reg, then reboot Windows."},
+{"@type":"HowToStep","name":"Install kkguai on the Mac","text":"Download the .dmg, drag kkguai into Applications, and run the xattr command once before the first launch."},
+{"@type":"HowToStep","name":"Connect and open an app","text":"Enter the Windows PC's address and account in kkguai, then open an app from the Start menu. It gets its own Mac window and Dock icon."}]},
+{"@type":"BreadcrumbList","@id":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"kkguai","item":"https://kkguai666.github.io/kkguai/en/"},{"@type":"ListItem","position":2,"name":"RemoteApp guide","item":"https://kkguai666.github.io/kkguai/en/remoteapp-guide.html"}]}
+]}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="kkguai home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"></rect><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"></rect><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"></path></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="index.html">Home</a>
+      <a href="remoteapp-guide.html" aria-current="page">RemoteApp guide</a>
+      <a href="vs-parallels.html">Comparison</a>
+      <a href="faq.html">FAQ</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <a class="lang-btn" href="../remoteapp-guide.html" hreflang="zh-CN" aria-label="切换到中文">中文</a>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-head">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="index.html">kkguai</a><span class="sep">/</span><span>Guides</span><span class="sep">/</span><span aria-current="page">RemoteApp guide</span>
+    </nav>
+    <p class="kicker" style="margin-top:22px"><span class="dot"></span>Guide · about 10 minutes</p>
+    <h1 class="doc-title">Run Windows apps on a Mac, <span class="accent">without a virtual machine</span></h1>
+    <p class="doc-lede">You don't need a second Windows installed inside your Mac. Windows ships with a capability called <strong>RemoteApp</strong>: the remote session publishes a single program window instead of a whole desktop. kkguai is the free, open-source macOS client that brings those windows over. This guide goes from zero to your first window.</p>
+    <div class="doc-meta">
+      <span>Free · MIT</span>
+      <span>macOS 14+ · Apple Silicon</span>
+      <span>Windows 10/11 Pro</span>
+      <span>Updated 2026-11-23</span>
+    </div>
+
+    <div class="toc">
+      <b>On this page</b>
+      <ol>
+        <li><a href="#what">What RemoteApp is</a></li>
+        <li><a href="#requirements">What you need</a></li>
+        <li><a href="#steps">Five steps to a first window</a></li>
+        <li><a href="#trouble">If it doesn't work</a></li>
+        <li><a href="#next">Where to go next</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="doc prose">
+    <section id="what">
+      <h2>What RemoteApp is, and how it differs from remote desktop</h2>
+      <p>Remote Desktop (RDP) normally streams an entire Windows desktop into one window: you see the Windows Start menu, taskbar and wallpaper, packed into a single Mac window.</p>
+      <p>RemoteApp is the other half of RDP. The session hands the client one program window at a time, and the Windows desktop, taskbar and Start menu never appear. The app window lives on the Mac desktop: you drag it, resize it, minimise it, and put it next to your normal Mac apps.</p>
+      <ul>
+        <li><strong>The program still runs on Windows.</strong> Files, databases and intranet tools stay on that PC; the Mac only displays the window and sends input.</li>
+        <li><strong>One window and one Dock icon per app.</strong> Spotlight, Launchpad and ⌘Tab find it like anything else.</li>
+        <li><strong>No virtual machine.</strong> The Mac gives Windows no RAM or disk, and runs no second set of drivers.</li>
+      </ul>
+      <p>Companies usually deploy RemoteApp through RDS or AVD. kkguai targets a different everyday case: you already have a Windows Pro PC nearby and just want its few programs on your Mac. The registry file in the release turns on the single-machine RemoteApp capability there; Microsoft doesn't ship a UI for that particular use.</p>
+    </section>
+
+    <section id="requirements">
+      <h2>What you need</h2>
+      <div class="table-wrap">
+        <table>
+          <caption>There only has to be a network path between the two machines — no public IP required.</caption>
+          <thead>
+            <tr><th scope="col">Item</th><th scope="col">Requirement</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Mac</th><td>macOS 14 or later on Apple Silicon (M-series). The current release does not support Intel Macs; you can build from source.</td></tr>
+            <tr><th scope="row">Windows host</th><td>Windows 10/11 Pro or Enterprise, or Windows Server. <strong>Windows Home cannot host RDP.</strong></td></tr>
+            <tr><th scope="row">Powered on</th><td>The Windows PC stays on and connected. The programs run there; if it sleeps or shuts down, the windows go away.</td></tr>
+            <tr><th scope="row">Network</th><td>Same LAN, or a path through a VPN, Tailscale or similar. Don't expose port 3389 to the open internet.</td></tr>
+            <tr><th scope="row">Permissions</th><td>Administrator rights on Windows once: to enable Remote Desktop, import the registry files, and reboot.</td></tr>
+            <tr><th scope="row">Account</th><td>A Windows account with a password. RDP rejects blank passwords.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <p><b>Windows Home:</b> Microsoft restricts Windows Home so it cannot accept Remote Desktop connections — there is no switch to flip. Upgrade to Pro, or use a virtual machine instead (see the <a href="vs-parallels.html">comparison</a>).</p>
+      </div>
+    </section>
+
+    <section id="steps">
+      <h2>Five steps to a first window</h2>
+      <p>These steps assume the two machines can already reach each other. Expect about ten minutes, most of it spent waiting for Windows to reboot.</p>
+
+      <ol class="howto">
+        <li id="step-1">
+          <b>Check the Windows edition and enable Remote Desktop</b>
+          <p>On Windows, press <kbd>Win</kbd> + <kbd>R</kbd>, type <code>winver</code>, and confirm Pro or Enterprise. Then open Settings → System → Remote Desktop and turn it on.</p>
+          <p>Or run these two lines in an <b>administrator PowerShell</b> — same result:</p>
+          <div class="code-card">
+            <div class="code-head"><span class="file-name">Windows · Administrator PowerShell</span></div>
+            <pre><span class="c"># Enable Remote Desktop and allow it through the firewall (language-neutral rule group ID)</span>
+<span class="p">Set-ItemProperty</span> 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+<span class="p">Enable-NetFirewallRule</span> -Group '@FirewallAPI.dll,-28752'</pre>
+          </div>
+        </li>
+        <li id="step-2">
+          <b>Import enable-remoteapp.reg, then reboot</b>
+          <p>Find <code>enable-remoteapp.reg</code> in the <a href="https://github.com/kkguai666/kkguai/releases/latest">latest release</a> and run it as administrator, or import it in Registry Editor. <b>This step is required</b> — it enables single-machine RemoteApp publishing.</p>
+          <ul>
+            <li>If the release also contains <code>single-session.reg</code>, import it only if it fits your setup (see below).</li>
+            <li><b>Reboot Windows</b> after importing so the new policy takes effect.</li>
+          </ul>
+          <p>If that Windows PC stays signed in to a desktop session, the dedicated app session may fail to start. <code>single-session.reg</code> is for that single-session case; leave it out at first and come back to it if you hit an "already signed in" error.</p>
+        </li>
+        <li id="step-3">
+          <b>Install kkguai on the Mac</b>
+          <p>Download <code>kkguai-0.1.1-macos-arm64.dmg</code>, open it, and drag kkguai into Applications. The build is not notarized by Apple yet, so run this once before the first launch:</p>
+          <div class="code-card">
+            <div class="code-head"><span class="file-name">macOS · Terminal</span></div>
+            <pre><span class="c"># Remove the download quarantine flag (once per install)</span>
+<span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app
+<span class="p">open</span> /Applications/kkguai.app</pre>
+          </div>
+          <p class="small">Skip it and macOS will say kkguai "is damaged" or "cannot be verified". The reason and the fix are in the <a href="faq.html#xattr">FAQ</a>.</p>
+        </li>
+        <li id="step-4">
+          <b>Enter the address and account, then connect</b>
+          <p>Create a connection in kkguai with the Windows PC's hostname or IP (on a LAN that's usually something like <code>192.168.1.x</code>), your username and password. On Tailscale, use the address or MagicDNS name it assigned.</p>
+          <p>On the first connection Windows may ask you to trust its certificate; confirm it. The session itself is encrypted.</p>
+        </li>
+        <li id="step-5">
+          <b>Open an app from the Start menu</b>
+          <p>You'll get a Windows 11-style Start menu listing the programs available on that PC. Click one and it becomes a separate Mac window with its own Dock icon.</p>
+          <p>Open as many as you like afterwards — they don't interfere with each other, and each can go full screen or share the screen.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="trouble">
+      <h2>If it doesn't work</h2>
+      <p>The usual suspects:</p>
+      <ul>
+        <li><strong>Connection refused or timing out:</strong> make sure Windows is the Pro edition, Remote Desktop is switched on, and the firewall allows 3389 — then ping the PC from another device.</li>
+        <li><strong>No apps in the Start menu:</strong> usually <code>enable-remoteapp.reg</code> was never imported, or Windows wasn't rebooted afterwards.</li>
+        <li><strong>"Desktop session already signed in":</strong> the same account has a desktop login on that Windows PC. Sign that session out, or use <code>single-session.reg</code>.</li>
+        <li><strong>macOS says the app is damaged:</strong> that's the download quarantine flag, not real damage. Run the <code>xattr</code> command above.</li>
+      </ul>
+      <p>A longer list lives in the <a href="../troubleshooting.html">troubleshooting guide</a>; the <a href="faq.html">FAQ</a> covers the rest.</p>
+    </section>
+
+    <section id="next">
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="vs-parallels.html">kkguai vs Parallels, Windows App and UTM</a> — who each option is actually for.</li>
+        <li><a href="faq.html">FAQ</a> — Windows Home, notarization, security, multi-monitor, Chinese input, Intel Macs.</li>
+        <li><a href="../troubleshooting.html">Troubleshooting</a> — connections, certificates, input methods, odd windows.</li>
+      </ul>
+    </section>
+
+    <div class="related">
+      <span class="related-label">Related pages</span>
+      <a href="vs-parallels.html"><b>kkguai vs Parallels vs Windows App vs UTM</b><span>An honest comparison table, and when each option is the right one.</span></a>
+      <a href="faq.html"><b>FAQ</b><span>Windows Home, notarization and xattr, RDP security, multi-monitor, CJK input.</span></a>
+    </div>
+
+    <div class="endcap">
+      <h2>Ready to try it?</h2>
+      <p>Free and MIT-licensed. All you need is a Windows Pro PC that stays on.</p>
+      <div class="row">
+        <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">Download kkguai</a>
+        <a class="btn btn-ghost" href="https://github.com/kkguai666/kkguai">View on GitHub</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="index.html">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"></rect><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"></rect><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"></path></svg>
+        kkguai
+      </a>
+      <span>MIT licensed · built on Pstsc</span>
+      <span class="spacer"></span>
+      <a href="index.html">Home</a>
+      <a href="remoteapp-guide.html">RemoteApp guide</a>
+      <a href="vs-parallels.html">Comparison</a>
+      <a href="faq.html">FAQ</a>
+      <a href="../troubleshooting.html">Troubleshooting</a>
+      <a href="https://github.com/kkguai666/kkguai">Repository</a>
+      <a href="../remoteapp-guide.html" hreflang="zh-CN" lang="zh-CN">中文</a>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>

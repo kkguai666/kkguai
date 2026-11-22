@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>如何在 Mac 上运行 Windows 程序，不用虚拟机 — RemoteApp 指南 · kkguai</title>
+<meta name="description" content="不用 Parallels、也不用虚拟机：用 Windows 自带的 RemoteApp 能力，让每个 Windows 程序变成 Mac 上的原生窗口。从开启远程桌面、导入 enable-remoteapp.reg 到打开第一个窗口的完整步骤。">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何在 Mac 上运行 Windows 程序，不用虚拟机">
+<meta property="og:description" content="RemoteApp 指南：从开启远程桌面到打开第一个 Windows 程序窗口，全部步骤。免费开源。">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/remoteapp-guide.html">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="如何在 Mac 上运行 Windows 程序，不用虚拟机">
+<meta name="twitter:description" content="RemoteApp 指南：从开启远程桌面到打开第一个 Windows 程序窗口。">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/guide.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Article","@id":"https://kkguai666.github.io/kkguai/remoteapp-guide.html#article","headline":"如何在 Mac 上运行 Windows 程序，不用虚拟机 — RemoteApp 指南","description":"不用 Parallels、也不用虚拟机：用 Windows 自带的 RemoteApp 能力，让每个 Windows 程序变成 Mac 上的原生窗口。从开启远程桌面到打开第一个窗口的完整步骤。","url":"https://kkguai666.github.io/kkguai/remoteapp-guide.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://kkguai666.github.io/kkguai/remoteapp-guide.html"},"inLanguage":"zh-CN","datePublished":"2026-11-23","dateModified":"2026-11-23","image":"https://kkguai666.github.io/kkguai/assets/social.png","author":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"publisher":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"about":{"@type":"SoftwareApplication","name":"kkguai","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 14+ (Apple Silicon)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
+{"@type":"HowTo","@id":"https://kkguai666.github.io/kkguai/remoteapp-guide.html#howto","name":"在一台 Mac 上打开第一个 Windows RemoteApp 窗口","description":"用已有的 Windows 10/11 专业版电脑和免费的 kkguai，把单个 Windows 程序变成 Mac 原生窗口。","totalTime":"PT10M","tool":[{"@type":"HowToTool","name":"kkguai for macOS"},{"@type":"HowToTool","name":"enable-remoteapp.reg"}],"step":[
+{"@type":"HowToStep","name":"检查 Windows 版本","text":"需要 Windows 10/11 专业版、企业版或 Windows Server。家庭版不能作为远程桌面主机。"},
+{"@type":"HowToStep","name":"开启远程桌面并放行防火墙","text":"在管理员 PowerShell 中关闭 fDenyTSConnections 并启用远程桌面防火墙规则组。"},
+{"@type":"HowToStep","name":"导入 enable-remoteapp.reg","text":"以管理员身份导入发布包里的 enable-remoteapp.reg（必需），按需导入 single-session.reg，然后重启 Windows。"},
+{"@type":"HowToStep","name":"在 Mac 上安装 kkguai","text":"下载 .dmg，把 kkguai 拖进应用程序文件夹；首次打开前执行一次 xattr 命令去掉隔离标记。"},
+{"@type":"HowToStep","name":"连接并打开程序","text":"在 kkguai 中填入 Windows 电脑的地址和账号，从开始菜单打开程序，它会在 Mac 上得到自己的窗口和 Dock 图标。"}]},
+{"@type":"BreadcrumbList","@id":"https://kkguai666.github.io/kkguai/remoteapp-guide.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"kkguai","item":"https://kkguai666.github.io/kkguai/"},{"@type":"ListItem","position":2,"name":"RemoteApp 指南","item":"https://kkguai666.github.io/kkguai/remoteapp-guide.html"}]}
+]}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="kkguai 首页">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html" aria-current="page">RemoteApp 指南</a>
+      <a href="vs-parallels.html">方案对比</a>
+      <a href="faq.html">常见问题</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <a class="lang-btn" href="en/remoteapp-guide.html" hreflang="en" aria-label="Switch to English">EN</a>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-head">
+    <nav class="crumbs" aria-label="面包屑">
+      <a href="index.html">kkguai</a><span class="sep">/</span><span>指南</span><span class="sep">/</span><span aria-current="page">RemoteApp 指南</span>
+    </nav>
+    <p class="kicker" style="margin-top:22px"><span class="dot"></span>指南 · 约 10 分钟</p>
+    <h1 class="doc-title">在 Mac 上运行 Windows 程序，<span class="accent">不用虚拟机</span></h1>
+    <p class="doc-lede">你不需要在 Mac 里再装一台 Windows。Windows 自带一种叫 <strong>RemoteApp</strong> 的能力：远程会话只发布单个程序窗口。kkguai 是免费开源的 macOS 客户端，负责把这些窗口接到你的 Mac 上。这篇指南从零讲到第一个窗口出现。</p>
+    <div class="doc-meta">
+      <span>免费 · MIT</span>
+      <span>macOS 14+ · Apple Silicon</span>
+      <span>Windows 10/11 专业版</span>
+      <span>更新于 2026-11-23</span>
+    </div>
+
+    <div class="toc">
+      <b>本页内容</b>
+      <ol>
+        <li><a href="#what">RemoteApp 是什么</a></li>
+        <li><a href="#requirements">需要准备什么</a></li>
+        <li><a href="#steps">五步打开第一个窗口</a></li>
+        <li><a href="#trouble">卡住了怎么办</a></li>
+        <li><a href="#next">接下来</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="doc prose">
+    <section id="what">
+      <h2>RemoteApp 是什么，和「远程桌面」有什么不同</h2>
+      <p>远程桌面协议（RDP）默认把一整块 Windows 桌面串流成一个窗口：你看到的是 Windows 的开始菜单、任务栏和壁纸，只是装进了 Mac 的一个大窗口里。</p>
+      <p>RemoteApp 是 RDP 的另一半能力：会话只把一个程序的窗口交给客户端，Windows 的桌面、任务栏和开始菜单都不会出现。程序窗口直接显示在 Mac 桌面上，可以拖动、缩放、最小化，也能和平常的 Mac 应用并排摆放。</p>
+      <ul>
+        <li><strong>程序仍然运行在 Windows 上。</strong>文件、数据库、公司内网软件都留在那台电脑里，Mac 只负责显示和输入。</li>
+        <li><strong>每个程序一个窗口、一个 Dock 图标。</strong>Spotlight、Launchpad、⌘Tab 都能找到它。</li>
+        <li><strong>不用虚拟机。</strong>Mac 不分配内存和磁盘给 Windows，也不跑第二套驱动。</li>
+      </ul>
+      <p>公司里通常用 RDS / AVD 部署 RemoteApp；kkguai 面向的是另一种常见情况：你手边已经有一台 Windows 专业版电脑，只想在 Mac 上打开它的几个程序。发布包里的注册表文件会在那台电脑上打开单机的 RemoteApp 能力，微软没有为这种用法提供图形界面。</p>
+    </section>
+
+    <section id="requirements">
+      <h2>需要准备什么</h2>
+      <div class="table-wrap">
+        <table>
+          <caption>两台机器之间只要有网络可达的路径即可，不需要公网 IP。</caption>
+          <thead>
+            <tr><th scope="col">项目</th><th scope="col">要求</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Mac</th><td>macOS 14 或更新，Apple Silicon（M 系列）。当前发布包不支持 Intel Mac，可用源码自行构建。</td></tr>
+            <tr><th scope="row">Windows 主机</th><td>Windows 10 / 11 专业版或企业版，或 Windows Server。<strong>家庭版不能作为 RDP 主机。</strong></td></tr>
+            <tr><th scope="row">开机与联网</th><td>Windows 电脑要开着并保持网络连接。程序在那边运行，关机或休眠后窗口就没了。</td></tr>
+            <tr><th scope="row">网络</th><td>同一个局域网，或 VPN、Tailscale 等能互通的路径。建议不要直接把 3389 端口暴露到公网。</td></tr>
+            <tr><th scope="row">权限</th><td>在 Windows 上需要一次管理员权限：开启远程桌面、导入注册表、重启。</td></tr>
+            <tr><th scope="row">账号</th><td>一个设置了密码的 Windows 账号。RDP 不接受空密码。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <p><b>家庭版怎么办：</b>Windows 家庭版被微软限制为不能接受远程桌面连接，没有开关可以打开。需要升级到专业版，或者改用虚拟机方案（见 <a href="vs-parallels.html">方案对比</a>）。</p>
+      </div>
+    </section>
+
+    <section id="steps">
+      <h2>五步打开第一个窗口</h2>
+      <p>下面的步骤假设两台机器已经能互相 ping 通。全程大约十分钟，大部分时间花在 Windows 重启上。</p>
+
+      <ol class="howto">
+        <li id="step-1">
+          <b>检查 Windows 版本并开启远程桌面</b>
+          <p>在 Windows 上按 <kbd>Win</kbd> + <kbd>R</kbd>，输入 <code>winver</code> 确认是专业版或企业版。然后打开「设置 → 系统 → 远程桌面」，把开关打开。</p>
+          <p>也可以在<b>管理员 PowerShell</b> 里直接运行下面两行，效果相同：</p>
+          <div class="code-card">
+            <div class="code-head"><span class="file-name">Windows · 管理员 PowerShell</span></div>
+            <pre><span class="c"># 允许远程桌面，并放行防火墙（规则组 ID 与系统语言无关）</span>
+<span class="p">Set-ItemProperty</span> 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+<span class="p">Enable-NetFirewallRule</span> -Group '@FirewallAPI.dll,-28752'</pre>
+          </div>
+        </li>
+        <li id="step-2">
+          <b>导入 enable-remoteapp.reg，然后重启</b>
+          <p>从 <a href="https://github.com/kkguai666/kkguai/releases/latest">最新 Release</a> 里找到 <code>enable-remoteapp.reg</code>，右键「以管理员身份运行」或在注册表编辑器里导入。<b>这一步是必需的</b>——它负责打开单机 RemoteApp 发布。</p>
+          <ul>
+            <li>如果同时有 <code>single-session.reg</code>，按你的使用方式决定是否导入（见下方说明）。</li>
+            <li>导入后<b>重启 Windows</b>，新的策略才会生效。</li>
+          </ul>
+          <p>如果你在那台 Windows 上一直保持着一个桌面登录会话，专用会话可能无法创建。<code>single-session.reg</code> 用于这种单会话场景；不确定就先不导入，遇到「已登录」类错误再回来看这一步。</p>
+        </li>
+        <li id="step-3">
+          <b>在 Mac 上安装 kkguai</b>
+          <p>下载 <code>kkguai-0.1.1-macos-arm64.dmg</code>，打开后把 kkguai 拖进「应用程序」。发布包还没有经过 Apple 公证，首次打开前在终端执行一次：</p>
+          <div class="code-card">
+            <div class="code-head"><span class="file-name">macOS · Terminal</span></div>
+            <pre><span class="c"># 去掉下载隔离标记（每次安装只需一次）</span>
+<span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app
+<span class="p">open</span> /Applications/kkguai.app</pre>
+          </div>
+          <p class="small">跳过这一步，macOS 会提示「kkguai 已损坏」或「无法验证开发者」。原因与处理方式见 <a href="faq.html#xattr">常见问题</a>。</p>
+        </li>
+        <li id="step-4">
+          <b>填入地址和账号，连接</b>
+          <p>在 kkguai 里新建连接，填写 Windows 电脑的主机名或 IP（局域网里通常形如 <code>192.168.1.x</code>）、用户名和密码。Tailscale 用户直接填 Tailscale 分配的地址或 MagicDNS 名称。</p>
+          <p>第一次连接时 Windows 可能会询问是否信任证书，按提示确认即可。会话本身是加密的。</p>
+        </li>
+        <li id="step-5">
+          <b>从开始菜单打开程序</b>
+          <p>连接后会出现一个 Windows 11 风格的开始菜单，列出那台电脑上可用的程序。点开任意一个，它就会变成 Mac 上的一个独立窗口，并在 Dock 里得到自己的图标。</p>
+          <p>之后可以同时打开多个程序，它们互不影响，也可以各自全屏或分屏。</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="trouble">
+      <h2>卡住了怎么办</h2>
+      <p>最常见的几种情况：</p>
+      <ul>
+        <li><strong>连接被拒绝或超时：</strong>先确认 Windows 版本是专业版，远程桌面开关已打开，防火墙放行了 3389；再用另一台设备 ping 一下那台电脑。</li>
+        <li><strong>开始菜单里没有程序：</strong>通常是 <code>enable-remoteapp.reg</code> 没导入，或者导入后没有重启。</li>
+        <li><strong>提示桌面会话已登录：</strong>Windows 上已有同一账号的桌面登录。退出那个桌面会话，或使用 <code>single-session.reg</code>。</li>
+        <li><strong>Mac 说 app 已损坏：</strong>那是下载隔离标记，不是真的损坏。执行上面的 <code>xattr</code> 命令即可。</li>
+      </ul>
+      <p>更完整的问题清单和解决方法在 <a href="troubleshooting.html">排障指南</a>，也可以先看 <a href="faq.html">常见问题</a>。</p>
+    </section>
+
+    <section id="next">
+      <h2>接下来</h2>
+      <ul>
+        <li><a href="vs-parallels.html">kkguai 和 Parallels、Windows App、UTM 怎么选</a>——四种方案各自适合谁。</li>
+        <li><a href="faq.html">常见问题</a>——家庭版、公证、安全、多显示器、中文输入、Intel Mac。</li>
+        <li><a href="troubleshooting.html">排障指南</a>——连接、证书、输入法、窗口异常。</li>
+      </ul>
+    </section>
+
+    <div class="related">
+      <span class="related-label">相关页面</span>
+      <a href="vs-parallels.html"><b>kkguai vs Parallels vs Windows App vs UTM</b><span>一张诚实的对比表，以及每种方案什么时候才是对的。</span></a>
+      <a href="faq.html"><b>常见问题</b><span>家庭版、公证与 xattr、RDP 安全、多显示器、中日韩输入。</span></a>
+    </div>
+
+    <div class="endcap">
+      <h2>准备好试一下了吗？</h2>
+      <p>免费、MIT 开源。你只需要一台开着的 Windows 专业版电脑。</p>
+      <div class="row">
+        <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载 kkguai</a>
+        <a class="btn btn-ghost" href="https://github.com/kkguai666/kkguai">在 GitHub 上看</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="index.html">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+        kkguai
+      </a>
+      <span>MIT 许可 · 基于 Pstsc</span>
+      <span class="spacer"></span>
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html">RemoteApp 指南</a>
+      <a href="vs-parallels.html">方案对比</a>
+      <a href="faq.html">常见问题</a>
+      <a href="troubleshooting.html">排障</a>
+      <a href="https://github.com/kkguai666/kkguai">代码仓库</a>
+      <a href="en/remoteapp-guide.html" hreflang="en" lang="en">English</a>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>

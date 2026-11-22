@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kkguai vs Parallels Desktop（Coherence）vs Windows App vs UTM — 怎么选 · kkguai</title>
+<meta name="description" content="在 Mac 上跑 Windows 程序的四种主流方案对比：kkguai、Parallels Desktop 的 Coherence 模式、微软 Windows App、UTM。诚实列出每种方案的前提、代价和适用场景。">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/vs-parallels.html">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/vs-parallels.html">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/vs-parallels.html">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/vs-parallels.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kkguai vs Parallels Desktop vs Windows App vs UTM">
+<meta property="og:description" content="四种在 Mac 上运行 Windows 程序的方案，诚实对比，并说明每种什么时候才是对的。">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/vs-parallels.html">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="kkguai vs Parallels Desktop vs Windows App vs UTM">
+<meta name="twitter:description" content="四种在 Mac 上跑 Windows 程序的方案，诚实对比。">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/guide.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Article","@id":"https://kkguai666.github.io/kkguai/vs-parallels.html#article","headline":"kkguai vs Parallels Desktop（Coherence）vs Windows App vs UTM — 怎么选","description":"在 Mac 上跑 Windows 程序的四种主流方案对比：kkguai、Parallels Desktop 的 Coherence 模式、微软 Windows App、UTM。诚实列出每种方案的前提、代价和适用场景。","url":"https://kkguai666.github.io/kkguai/vs-parallels.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://kkguai666.github.io/kkguai/vs-parallels.html"},"inLanguage":"zh-CN","datePublished":"2026-11-23","dateModified":"2026-11-23","image":"https://kkguai666.github.io/kkguai/assets/social.png","author":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"publisher":{"@type":"Organization","name":"kkguai","url":"https://github.com/kkguai666/kkguai"},"about":{"@type":"SoftwareApplication","name":"kkguai","applicationCategory":"UtilitiesApplication","operatingSystem":"macOS 14+ (Apple Silicon)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}},
+{"@type":"BreadcrumbList","@id":"https://kkguai666.github.io/kkguai/vs-parallels.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"kkguai","item":"https://kkguai666.github.io/kkguai/"},{"@type":"ListItem","position":2,"name":"方案对比","item":"https://kkguai666.github.io/kkguai/vs-parallels.html"}]}
+]}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="kkguai 首页">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html">RemoteApp 指南</a>
+      <a href="vs-parallels.html" aria-current="page">方案对比</a>
+      <a href="faq.html">常见问题</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <a class="lang-btn" href="en/vs-parallels.html" hreflang="en" aria-label="Switch to English">EN</a>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-head">
+    <nav class="crumbs" aria-label="面包屑">
+      <a href="index.html">kkguai</a><span class="sep">/</span><span>指南</span><span class="sep">/</span><span aria-current="page">方案对比</span>
+    </nav>
+    <p class="kicker" style="margin-top:22px"><span class="dot"></span>对比 · 2026 年 11 月</p>
+    <h1 class="doc-title">kkguai、Parallels、Windows App、UTM：<span class="accent">哪个适合你</span></h1>
+    <p class="doc-lede">四种方案都能让你在 Mac 上用到 Windows 程序，但它们解决的不是同一个问题。有人需要一台「Mac 里的电脑」，有人只是想让公司那台 Windows 上的 ERP 和几个老工具随叫随到。先看清前提，再选工具。</p>
+    <div class="doc-meta">
+      <span>四方案对比</span>
+      <span>价格截至 2026 年 11 月</span>
+      <span>更新于 2026-11-23</span>
+    </div>
+
+    <div class="toc">
+      <b>本页内容</b>
+      <ol>
+        <li><a href="#how">四种方案各自怎么工作</a></li>
+        <li><a href="#table">逐项对比</a></li>
+        <li><a href="#when-kkg">什么时候该选 kkguai</a></li>
+        <li><a href="#when-not">什么时候不该选 kkguai</a></li>
+        <li><a href="#myths">三个常见误解</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="doc prose">
+    <section id="how">
+      <h2>四种方案各自怎么工作</h2>
+      <div class="cards">
+        <div class="card">
+          <span class="tag">kkguai</span>
+          <h3>把已有 Windows 电脑的程序接到 Mac</h3>
+          <p>用 Windows 自带的 RemoteApp：远程会话只发布单个程序窗口，kkguai 把它显示成 Mac 原生窗口。Windows 在那台电脑上照常运行，Mac 不分配内存和磁盘。</p>
+          <p class="card-foot">前提：有一台开着的 Windows 10/11 专业版电脑，且两台机器网络可达。</p>
+        </div>
+        <div class="card">
+          <span class="tag">Parallels Desktop</span>
+          <h3>在 Mac 里运行一整台 Windows 虚拟机</h3>
+          <p>虚拟机和它的 Coherence 模式把 Windows 程序窗口直接画到 Mac 桌面上，不需要第二台电脑。Windows 11 ARM 版跑在 Apple Silicon 上，x86 程序靠转译。</p>
+          <p class="card-foot">前提：订阅费，另需 Windows 授权；占用 Mac 的内存、CPU 和磁盘。</p>
+        </div>
+        <div class="card">
+          <span class="tag">Windows App</span>
+          <h3>微软官方的远程桌面客户端</h3>
+          <p>免费连到另一台 Windows 电脑、Windows 365 云电脑或 Azure 虚拟桌面。默认给你一整块 Windows 桌面，装在一个窗口里。</p>
+          <p class="card-foot">前提：能远程访问的 Windows 主机；按程序发布需要 AVD / RDS 这类企业设施。</p>
+        </div>
+        <div class="card">
+          <span class="tag">UTM</span>
+          <h3>免费开源的虚拟机</h3>
+          <p>基于 QEMU 与 Apple 虚拟化框架，在 Mac 上开 Windows 或 Linux 虚拟机。没有 Coherence 之类的窗口整合，看到的是完整的 Windows 桌面。</p>
+          <p class="card-foot">前提：Windows 授权；愿意自己配置和维护虚拟机。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="table">
+      <h2>逐项对比</h2>
+      <p>下面这张表尽量只写有把握的事实。价格和功能会变，以各家官网为准。</p>
+      <div class="table-wrap">
+        <table>
+          <caption>截至 2026 年 11 月。Parallels Desktop 的订阅价不含 Windows 授权；Windows 作为 RDP 主机需要专业版。</caption>
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" class="us">kkguai<span class="tagline">免费 · 开源</span></th>
+              <th scope="col">Parallels Desktop<span class="tagline">Coherence 模式</span></th>
+              <th scope="col">Windows App<span class="tagline">微软官方客户端</span></th>
+              <th scope="col">UTM<span class="tagline">开源虚拟机</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Windows 在哪里运行</th><td class="us">你已有的 Windows 电脑</td><td>Mac 内的虚拟机</td><td>另一台 Windows 电脑或云端</td><td>Mac 内的虚拟机</td></tr>
+            <tr><th scope="row">需要虚拟机</th><td class="us"><span class="yes">不用</span></td><td>需要</td><td><span class="yes">不用</span></td><td>需要</td></tr>
+            <tr><th scope="row">需要额外的 Windows 授权</th><td class="us">用已有授权</td><td>需要</td><td>需要（专业版或云订阅）</td><td>需要</td></tr>
+            <tr><th scope="row">价格</th><td class="us price">免费</td><td class="price">约 $99/年起</td><td class="price">客户端免费</td><td class="price">免费</td></tr>
+            <tr><th scope="row">程序以什么形式出现</th><td class="us">每个程序一个 Mac 原生窗口</td><td>Coherence 下也是独立窗口</td><td>一整块 Windows 桌面</td><td>一整块 Windows 桌面</td></tr>
+            <tr><th scope="row">需要另一台电脑</th><td class="us">需要</td><td><span class="yes">不需要</span></td><td>需要</td><td><span class="yes">不需要</span></td></tr>
+            <tr><th scope="row">占用 Mac 的内存和磁盘</th><td class="us">很低，只负责显示</td><td>高，按分配的虚拟硬件</td><td>低</td><td>高，按分配的虚拟硬件</td></tr>
+            <tr><th scope="row">可以离线使用</th><td class="us">不可以，需要网络</td><td><span class="yes">可以</span></td><td>不可以，需要网络</td><td><span class="yes">可以</span></td></tr>
+            <tr><th scope="row">重度 3D、视频与游戏</th><td class="us">取决于主机和网络，不是强项</td><td>Windows 11 ARM 的图形有限，部分反作弊游戏与驱动不兼容</td><td>取决于主机和网络</td><td>取决于虚拟化，通常最慢</td></tr>
+            <tr><th scope="row">开源</th><td class="us"><span class="yes">MIT</span></td><td><span class="no">否</span></td><td><span class="no">否</span></td><td><span class="yes">Apache-2.0</span></td></tr>
+            <tr><th scope="row">最适合</th><td class="us">已有一台常用的 Windows 电脑，只想要它的几个程序</td><td>没有第二台电脑，或需要一台完整、离线的 Windows</td><td>连公司电脑、云电脑或虚拟桌面</td><td>想自己掌控虚拟机、不想付费</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">「Windows App」是微软远程桌面客户端的新名字（以前叫 Microsoft Remote Desktop）。它和云端的 Windows 365 / Azure 虚拟桌面是两件事：客户端本身免费。</p>
+    </section>
+
+    <section id="when-kkg">
+      <h2>什么时候该选 kkguai</h2>
+      <ul>
+        <li><strong>你已经有那台 Windows 电脑，而且它本来就开着。</strong>公司配的台式机、家里的主机、跑 ERP 或财务软件的机器都算。</li>
+        <li><strong>你只需要几个程序，不需要一个完整的 Windows 桌面。</strong>把 ERP、进销存、老版 Office、行业专用工具放到 Mac 桌面上，和邮件、浏览器并排。</li>
+        <li><strong>你不想为偶尔用到的 Windows 程序付订阅费</strong>，也不想让虚拟机吃掉 8 GB 内存和几十 GB 磁盘。</li>
+        <li><strong>你在意窗口体验：</strong>Retina 清晰度、Mac 输入法打中文、每个程序自己的 Dock 图标、多显示器布局同步。</li>
+      </ul>
+      <p>具体安装步骤见 <a href="remoteapp-guide.html">RemoteApp 指南</a>。</p>
+    </section>
+
+    <section id="when-not">
+      <h2>什么时候不该选 kkguai</h2>
+      <p>这是本页最重要的部分。kkguai 只是一个 RemoteApp 客户端，它不改变下面这些事实：</p>
+      <ul>
+        <li><strong>那台 Windows 必须开机、联网。</strong>出差、断网、电脑休眠，程序就用不了。虚拟机没有这个问题。</li>
+        <li><strong>必须是专业版或企业版。</strong>家庭版不能作为远程桌面主机，没有绕过办法。</li>
+        <li><strong>重度 3D、视频剪辑和游戏不是它的场景。</strong>画面要经过网络编码传输，延迟和画质取决于网络；这类工作用虚拟机或原生 Windows 更合适。</li>
+        <li><strong>它不会给你一个完整的 Windows 桌面。</strong>如果你需要 Windows 的开始菜单、任务栏、文件资源管理器整体来用，用 Windows App 或虚拟机。</li>
+        <li><strong>它不是微软官方支持的部署方式。</strong>公司若通过 RDS / AVD 管理 RemoteApp，应该走公司的方案。</li>
+      </ul>
+      <div class="callout">
+        <p><b>一句话：</b>如果「Windows 在哪运行」这个问题你答不上来，说明你需要的可能是虚拟机；如果你早就有一台在那运行着的 Windows 电脑，kkguai 是最省事的那条路。</p>
+      </div>
+    </section>
+
+    <section id="myths">
+      <h2>三个常见误解</h2>
+      <h3>「免费的一定不如付费的」</h3>
+      <p>它们不是同一种产品。Parallels 卖的是在 Mac 里造一台电脑；kkguai 卖的（准确地说是送的）是把已有电脑的窗口接过来。前者功能多得多，后者在本职工作上不花钱。</p>
+      <h3>「RemoteApp 一定要企业服务器」</h3>
+      <p>微软官方的 RemoteApp 部署确实基于 RDS。但 Windows 专业版本身保留了单机发布 RemoteApp 的能力，只是没有图形界面；发布包里的 <code>enable-remoteapp.reg</code> 就是把它打开。这也意味着它依赖 Windows 的既有行为，系统大版本更新后值得留意。</p>
+      <h3>「远程桌面就是把画面传过来，肯定糊」</h3>
+      <p>模糊通常来自按 100% 协商、再被 Mac 放大。kkguai 按 200% 协商会话、按 2 倍像素渲染，文字在 Retina 上能保持清晰；当然，最终的流畅度仍然取决于网络质量。</p>
+    </section>
+
+    <div class="related">
+      <span class="related-label">相关页面</span>
+      <a href="remoteapp-guide.html"><b>RemoteApp 指南</b><span>从开启远程桌面到第一个窗口的五步操作。</span></a>
+      <a href="faq.html"><b>常见问题</b><span>家庭版、公证、安全、多显示器、中文输入、Intel Mac。</span></a>
+    </div>
+
+    <div class="endcap">
+      <h2>你的情况刚好符合？</h2>
+      <p>免费、MIT 开源，五分钟内可以验证它是否适合你。</p>
+      <div class="row">
+        <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载 kkguai</a>
+        <a class="btn btn-ghost" href="remoteapp-guide.html">看安装指南</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="index.html">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+        kkguai
+      </a>
+      <span>MIT 许可 · 基于 Pstsc</span>
+      <span class="spacer"></span>
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html">RemoteApp 指南</a>
+      <a href="vs-parallels.html">方案对比</a>
+      <a href="faq.html">常见问题</a>
+      <a href="troubleshooting.html">排障</a>
+      <a href="https://github.com/kkguai666/kkguai">代码仓库</a>
+      <a href="en/vs-parallels.html" hreflang="en" lang="en">English</a>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>

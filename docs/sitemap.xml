@@ -20,6 +20,60 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/"/>
   </url>
   <url>
+    <loc>https://kkguai666.github.io/kkguai/remoteapp-guide.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/en/remoteapp-guide.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/remoteapp-guide.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/remoteapp-guide.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/vs-parallels.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/vs-parallels.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/vs-parallels.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/vs-parallels.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/en/vs-parallels.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/vs-parallels.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/vs-parallels.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/vs-parallels.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/faq.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/faq.html"/>
+  </url>
+  <url>
+    <loc>https://kkguai666.github.io/kkguai/en/faq.html</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/faq.html"/>
+  </url>
+  <url>
     <loc>https://kkguai666.github.io/kkguai/troubleshooting.html</loc>
     <lastmod>2026-11-23</lastmod>
     <changefreq>monthly</changefreq>

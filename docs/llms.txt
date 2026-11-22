@@ -45,6 +45,15 @@
 - The remote Windows PC must remain on and reachable.
 - If the same Windows account is already signed in to a desktop session, app-window mode cannot connect; sign that session out first.
 
+## Guides
+
+- [RemoteApp guide: run Windows apps on a Mac without a virtual machine (Chinese)](https://kkguai666.github.io/kkguai/remoteapp-guide.html)
+- [RemoteApp guide (English)](https://kkguai666.github.io/kkguai/en/remoteapp-guide.html)
+- [kkguai vs Parallels Desktop (Coherence) vs Windows App vs UTM (Chinese)](https://kkguai666.github.io/kkguai/vs-parallels.html)
+- [kkguai vs Parallels Desktop vs Windows App vs UTM (English)](https://kkguai666.github.io/kkguai/en/vs-parallels.html)
+- [FAQ: Windows Home, xattr, RDP security, multi-monitor, CJK input, Intel Macs (Chinese)](https://kkguai666.github.io/kkguai/faq.html)
+- [FAQ (English)](https://kkguai666.github.io/kkguai/en/faq.html)
+
 ## Pages
 
 - [Chinese landing page](https://kkguai666.github.io/kkguai/)

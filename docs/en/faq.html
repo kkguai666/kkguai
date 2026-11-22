@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAQ — kkguai and RemoteApp, answered in full</title>
+<meta name="description" content="The full kkguai FAQ: which Windows edition you need, why Windows Home can't host RDP, notarization and the xattr command, RDP security on a LAN, VPN or Tailscale, multi-monitor, Chinese input, Intel Macs and how it differs from Parallels.">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/en/faq.html">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/faq.html">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/faq.html">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/faq.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FAQ — kkguai and RemoteApp">
+<meta property="og:description" content="Windows edition, Windows Home, xattr, security, multi-monitor, Chinese input, Intel Macs.">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/en/faq.html">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social-en.png">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FAQ — kkguai and RemoteApp">
+<meta name="twitter:description" content="Windows edition, Windows Home, xattr, security, multi-monitor, Chinese input, Intel Macs.">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social-en.png">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/guide.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"FAQPage","@id":"https://kkguai666.github.io/kkguai/en/faq.html#faq","url":"https://kkguai666.github.io/kkguai/en/faq.html","inLanguage":"en","name":"kkguai FAQ","mainEntity":[
+{"@type":"Question","name":"What is kkguai?","acceptedAnswer":{"@type":"Answer","text":"kkguai is a free, open-source macOS RemoteApp client built on Pstsc (FreeRDP). It connects to an existing Windows 10/11 Pro PC and turns individual Windows programs into native Mac windows — one window and one Dock icon per app."}},
+{"@type":"Question","name":"Which Windows edition do I need?","acceptedAnswer":{"@type":"Answer","text":"Windows 10/11 Pro or Enterprise, or Windows Server, with Remote Desktop enabled. Windows Home cannot host Remote Desktop, and RDP does not accept blank passwords."}},
+{"@type":"Question","name":"Can Windows Home host it at all?","acceptedAnswer":{"@type":"Answer","text":"No. Microsoft restricts Windows Home so it can't accept Remote Desktop connections, and there is no switch or reliable registry workaround. Upgrade to Pro, or use a virtual machine such as Parallels or UTM instead."}},
+{"@type":"Question","name":"Does the Windows PC have to stay on?","acceptedAnswer":{"@type":"Answer","text":"Yes. The programs run on that machine; kkguai only displays their windows and sends input. If it sleeps, shuts down or loses the network, the windows disappear."}},
+{"@type":"Question","name":"Can I use it outside my LAN?","acceptedAnswer":{"@type":"Answer","text":"Yes. Any reachable network path works: a VPN, Tailscale or a port forward. Prefer a VPN or Tailscale rather than exposing port 3389 to the internet."}},
+{"@type":"Question","name":"Why do I have to run xattr before the first launch?","acceptedAnswer":{"@type":"Answer","text":"The release is ad-hoc signed but not notarized by Apple, so macOS quarantines it after download, which leads to a damaged or unverified developer warning. Removing the quarantine flag takes one xattr command, once per install."}},
+{"@type":"Question","name":"What happens if I skip xattr? Is there another way?","acceptedAnswer":{"@type":"Answer","text":"macOS refuses to launch the app and says it is damaged or cannot be verified. You can run xattr -dr com.apple.quarantine /Applications/kkguai.app, or right-click the app, choose Open and allow it once in System Settings. The command line is the more reliable route."}},
+{"@type":"Question","name":"Is it secure? How does RDP over LAN, VPN and Tailscale compare?","acceptedAnswer":{"@type":"Answer","text":"The connection uses standard encrypted RDP; enable Network Level Authentication. A LAN has the smallest exposure; a VPN or Tailscale wraps the traffic in an encrypted tunnel and keeps the port off the internet. Never expose 3389 directly, and use a strong account password."}},
+{"@type":"Question","name":"Does it support multiple monitors?","acceptedAnswer":{"@type":"Answer","text":"Yes. Your Mac display layout is mirrored to the remote session, so windows can be dragged across screens without rearranging them each time."}},
+{"@type":"Question","name":"Can I type Chinese, Japanese or Korean with my Mac input method?","acceptedAnswer":{"@type":"Answer","text":"Yes. Pinyin and the other IMEs compose on the Mac, the candidate window appears on the Mac, and finished characters are sent to Windows as Unicode — no double composition and no lost characters."}},
+{"@type":"Question","name":"Does it work on Intel Macs?","acceptedAnswer":{"@type":"Answer","text":"The current release is Apple Silicon only. Intel Macs can build from source; see the repository's build instructions."}},
+{"@type":"Question","name":"How is this different from Parallels Desktop?","acceptedAnswer":{"@type":"Answer","text":"Parallels runs a whole Windows virtual machine on the Mac, needs a subscription and a Windows licence, and uses the Mac's RAM and disk. kkguai uses the Windows PC you already have, is free and open source, and costs the Mac almost nothing; the trade-off is that the PC must stay on and reachable."}},
+{"@type":"Question","name":"Is it free? Is it open source?","acceptedAnswer":{"@type":"Answer","text":"Yes. It is free, MIT-licensed and the source is on GitHub. No subscription, no in-app purchase, no account."}},
+{"@type":"Question","name":"Can Windows Server be the host?","acceptedAnswer":{"@type":"Answer","text":"Yes. Windows Server ships with Remote Desktop Services, and it can host RemoteApp after importing enable-remoteapp.reg. Licensing for multi-user server setups is up to your environment."}},
+{"@type":"Question","name":"What if the same account is already signed in to a desktop session?","acceptedAnswer":{"@type":"Answer","text":"In single-session mode, a new app session may fail to start while that account has a desktop login. Sign the desktop session out first, or follow the release notes and use single-session.reg."}}
+]},
+{"@type":"BreadcrumbList","@id":"https://kkguai666.github.io/kkguai/en/faq.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"kkguai","item":"https://kkguai666.github.io/kkguai/en/"},{"@type":"ListItem","position":2,"name":"FAQ","item":"https://kkguai666.github.io/kkguai/en/faq.html"}]}
+]}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="kkguai home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"></rect><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"></rect><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"></path></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="index.html">Home</a>
+      <a href="remoteapp-guide.html">RemoteApp guide</a>
+      <a href="vs-parallels.html">Comparison</a>
+      <a href="faq.html" aria-current="page">FAQ</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <a class="lang-btn" href="../faq.html" hreflang="zh-CN" aria-label="切换到中文">中文</a>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">Download</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-head">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="index.html">kkguai</a><span class="sep">/</span><span>Guides</span><span class="sep">/</span><span aria-current="page">FAQ</span>
+    </nav>
+    <p class="kicker" style="margin-top:22px"><span class="dot"></span>15 questions · long answers</p>
+    <h1 class="doc-title">Frequently asked questions</h1>
+    <p class="doc-lede">The seven questions on the home page are the short version. Here each one is expanded, plus the things people keep asking: Windows Home, notarization and xattr, RDP security, multi-monitor, CJK input and Intel Macs.</p>
+    <div class="doc-meta">
+      <span>Version 0.1.1</span>
+      <span>Updated 2026-11-23</span>
+      <span>Also see the <a href="../troubleshooting.html" style="color:var(--blue)">troubleshooting guide</a></span>
+    </div>
+
+    <div class="toc">
+      <b>Sections</b>
+      <ol>
+        <li><a href="#basics">The basics</a></li>
+        <li><a href="#setup">Install and first launch</a></li>
+        <li><a href="#daily">Day to day</a></li>
+        <li><a href="#security">Security and networking</a></li>
+        <li><a href="#alternatives">Alternatives and licensing</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="doc prose">
+    <section id="basics">
+      <h2>The basics</h2>
+      <div class="faq">
+        <details open>
+          <summary><span>What is kkguai?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>kkguai is a free, open-source macOS RemoteApp client built on <a href="https://github.com/kkguai666/kkguai">Pstsc</a> (FreeRDP). It connects to an existing Windows 10/11 Pro PC and turns individual Windows programs into native Mac windows: one window and one Dock icon per app, side by side with your normal Mac apps.</p>
+            <p>It is not a virtual machine and not a full-screen remote desktop. The programs run on that Windows PC; the Mac only displays them and sends input.</p>
+          </div>
+        </details>
+        <details id="windows-version">
+          <summary><span>Which Windows edition do I need?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p><b>Windows 10 or 11 Pro or Enterprise</b>, or Windows Server, with Remote Desktop enabled. RDP rejects blank passwords, so the Windows account needs one.</p>
+            <p>One command to check the edition: press <kbd>Win</kbd> + <kbd>R</kbd> and type <code>winver</code>.</p>
+          </div>
+        </details>
+        <details id="windows-home">
+          <summary><span>Can Windows Home host it at all?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p><b>Not as a host.</b> Microsoft restricts Windows Home so it cannot accept Remote Desktop connections. There is no switch in Settings and no reliable registry workaround. This is a Windows product-line limit, not a kkguai one.</p>
+            <p>Three realistic paths:</p>
+            <ul>
+              <li>Upgrade Home to Pro (you'll need an upgrade purchase or a new licence).</li>
+              <li>Run Windows in a virtual machine with Parallels Desktop or UTM — the guest edition doesn't matter for RemoteApp.</li>
+              <li>Run the program on a PC that is already Pro. See the <a href="vs-parallels.html">comparison</a>.</li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary><span>Does the Windows PC have to stay on?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. The programs run on that machine; kkguai only displays the windows and sends input. If it sleeps, shuts down or loses the network, the windows on the Mac disappear.</p>
+            <p>If it sleeps often, turn sleep off in Windows power settings — an office desktop is usually always on anyway.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Can Windows Server be the host?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. Windows Server ships with Remote Desktop Services and works as a RemoteApp host after importing <code>enable-remoteapp.reg</code>. Licensing rules for multi-user server setups are up to your environment; kkguai doesn't change them.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>Install and first launch</h2>
+      <div class="faq">
+        <details id="xattr">
+          <summary><span>Why do I have to run xattr before the first launch?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>The release is ad-hoc signed but not notarized by Apple. macOS attaches a quarantine flag (<code>com.apple.quarantine</code>) to downloaded apps, and an un-notarized app carrying it is refused by the system.</p>
+            <p>Removing the flag takes one command, once per install:</p>
+            <div class="code-card">
+              <div class="code-head"><span class="file-name">macOS · Terminal</span></div>
+              <pre><span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app</pre>
+            </div>
+            <p>You won't need it again after that.</p>
+          </div>
+        </details>
+        <details id="xattr-alt">
+          <summary><span>What happens if I skip xattr? Is there another way?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>macOS will say "kkguai is damaged and can't be opened" or "cannot verify the developer". The file isn't damaged; it's the quarantine policy.</p>
+            <p>Besides <code>xattr</code>, you can right-click the app in Finder and choose Open, then confirm once more; or click "Open Anyway" in System Settings → Privacy &amp; Security. Both work for the current install only, and the wording varies by macOS version. The command line is the most reliable.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Do I have to reboot after importing enable-remoteapp.reg?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. The registry changes affect how the Remote Desktop service behaves across sessions, and they settle after a restart. If the Start menu shows no apps, the first two things to check are whether you rebooted and whether the import was done as administrator.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>What if the same account is already signed in to a desktop session?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>In single-session mode, a desktop login with the same account can prevent a new app session from starting; kkguai reports an "already signed in" style error. Sign the desktop session out on that PC, then connect.</p>
+            <p>If you want a desktop login and RemoteApp to coexist, follow the release notes for <code>single-session.reg</code>. If unsure, leave it out and try it only if you hit the error.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="daily">
+      <h2>Day to day</h2>
+      <div class="faq">
+        <details id="monitors">
+          <summary><span>Does it support multiple monitors?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. Your Mac display layout is mirrored to the remote session, so windows can be dragged across screens without rearranging them each time. External displays, Studio Display and clamshell-with-external-monitor setups all follow the Mac's layout.</p>
+          </div>
+        </details>
+        <details id="input">
+          <summary><span>Can I type Chinese, Japanese or Korean with my Mac input method?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. Pinyin is composed on the Mac, the candidate window appears on the Mac, and finished characters are sent to Windows as Unicode. The remote side does not compose them again, so you don't get doubled text or dropped characters. Japanese and Korean input use the same mechanism.</p>
+          </div>
+        </details>
+        <details id="intel">
+          <summary><span>Does it work on Intel Macs?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>The current release is Apple Silicon only (M-series), with macOS 14 or later.</p>
+            <p>Intel Macs can build from source. The repository has build instructions; you'll need Xcode and the FreeRDP dependencies. The result is the same functionality, but there is no ready-made package or signature.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Can I open several apps at once?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. Apps from the Start menu open at the same time, each with its own Mac window and Dock icon, and each can go full screen, tile, or sit on a different display. They share the one connection to the Windows PC.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2>Security and networking</h2>
+      <div class="faq">
+        <details id="lan">
+          <summary><span>Can I use it outside my LAN?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Yes. Any reachable network path works: a VPN, Tailscale or a port forward. Tailscale gives you a fixed address or MagicDNS name for the PC — put it straight into kkguai.</p>
+            <p>Prefer a VPN or Tailscale over forwarding port 3389 on your router to the internet.</p>
+          </div>
+        </details>
+        <details id="security">
+          <summary><span>Is it secure? How does RDP over LAN, VPN and Tailscale compare?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>The connection uses standard RDP, encrypted in transit. How safe it is depends mostly on where you expose the host:</p>
+            <ul>
+              <li><b>LAN:</b> the smallest exposure. Only devices on the same network can try, and a strong password plus account lockout is enough for everyday use.</li>
+              <li><b>VPN:</b> traffic sits inside an encrypted tunnel and the RDP port is invisible from outside. Security depends on the VPN; corporate VPNs usually add access control.</li>
+              <li><b>Tailscale:</b> a point-to-point encrypted network on WireGuard, with devices authenticating each other and no port open to the internet. The easy choice for individuals.</li>
+            </ul>
+            <p><b>Don't</b> map 3389 directly to the internet. It attracts automated brute force, and no password makes that worth the risk. Use an account with a password and keep Network Level Authentication enabled in Windows.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Does my data go through a third-party server?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>No. kkguai is a direct client: video and input travel over an RDP connection between the two machines, with no relay server and no account system. If you use Tailscale, traffic goes over Tailscale's encrypted network (usually peer-to-peer); that's separate from kkguai.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="alternatives">
+      <h2>Alternatives and licensing</h2>
+      <div class="faq">
+        <details id="parallels">
+          <summary><span>How is this different from Parallels Desktop?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Parallels runs a whole Windows virtual machine inside the Mac and uses Coherence mode to draw program windows on the Mac desktop. It needs a subscription (from about $99/year) and a Windows licence, and it uses the Mac's RAM, CPU and tens of gigabytes of disk; in exchange it works offline and needs no second computer.</p>
+            <p>kkguai uses the Windows PC you already have, is free and open source, and costs the Mac almost nothing; in exchange that PC must stay on, be reachable, and run Pro. The full comparison is in <a href="vs-parallels.html">Comparison</a>.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Is it free? Is it open source?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Free, MIT-licensed, source on <a href="https://github.com/kkguai666/kkguai">GitHub</a>. No subscription, no in-app purchase, no account. If it saves you a Parallels subscription, a star on the repo is the best thanks.</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>Why is it called RemoteApp? Is it the same as Microsoft's RemoteApp?</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>RemoteApp is the RDP capability that publishes a single program window, and kkguai uses the one built into Windows. Companies usually deploy Microsoft's RemoteApp through RDS or AVD; kkguai targets a single Windows Pro PC and uses the registry file in the release to enable the capability there. At the protocol level it's the same thing; the deployment is different.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <p style="margin-top:40px;font-size:13px;color:var(--dim)">Question not answered here? Try the <a href="../troubleshooting.html" style="color:var(--blue)">troubleshooting guide</a>, or open an issue on <a href="https://github.com/kkguai666/kkguai/issues" style="color:var(--blue)">GitHub</a>.</p>
+
+    <div class="related">
+      <span class="related-label">Related pages</span>
+      <a href="remoteapp-guide.html"><b>RemoteApp guide</b><span>Five steps from enabling Remote Desktop to your first window.</span></a>
+      <a href="vs-parallels.html"><b>Comparison</b><span>kkguai, Parallels, Windows App and UTM — who each is for.</span></a>
+    </div>
+
+    <div class="endcap">
+      <h2>One thing left for you</h2>
+      <p>A Windows 10/11 Pro PC that stays on. We'll take it from there — five minutes.</p>
+      <div class="row">
+        <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">Download kkguai</a>
+        <a class="btn btn-ghost" href="remoteapp-guide.html">Read the setup guide</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="index.html">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"></rect><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"></rect><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"></path></svg>
+        kkguai
+      </a>
+      <span>MIT licensed · built on Pstsc</span>
+      <span class="spacer"></span>
+      <a href="index.html">Home</a>
+      <a href="remoteapp-guide.html">RemoteApp guide</a>
+      <a href="vs-parallels.html">Comparison</a>
+      <a href="faq.html">FAQ</a>
+      <a href="../troubleshooting.html">Troubleshooting</a>
+      <a href="https://github.com/kkguai666/kkguai">Repository</a>
+      <a href="../faq.html" hreflang="zh-CN" lang="zh-CN">中文</a>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>

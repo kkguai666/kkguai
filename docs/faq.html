@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>常见问题 — kkguai 与 RemoteApp 的完整问答</title>
+<meta name="description" content="关于 kkguai 的完整常见问题：需要什么版本的 Windows、家庭版为什么不行、xattr 与公证、RDP 在局域网/VPN/Tailscale 上是否安全、多显示器、中文输入、Intel Mac、与 Parallels 的区别。">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/faq.html">
+<link rel="alternate" hreflang="zh-CN" href="https://kkguai666.github.io/kkguai/faq.html">
+<link rel="alternate" hreflang="en" href="https://kkguai666.github.io/kkguai/en/faq.html">
+<link rel="alternate" hreflang="x-default" href="https://kkguai666.github.io/kkguai/faq.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="常见问题 — kkguai 与 RemoteApp">
+<meta property="og:description" content="需要什么版 Windows、家庭版、xattr、安全、多显示器、中文输入、Intel Mac。">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/faq.html">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="常见问题 — kkguai 与 RemoteApp">
+<meta name="twitter:description" content="需要什么版 Windows、家庭版、xattr、安全、多显示器、中文输入、Intel Mac。">
+<meta name="twitter:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/guide.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"FAQPage","@id":"https://kkguai666.github.io/kkguai/faq.html#faq","url":"https://kkguai666.github.io/kkguai/faq.html","inLanguage":"zh-CN","name":"kkguai 常见问题","mainEntity":[
+{"@type":"Question","name":"kkguai 是什么？","acceptedAnswer":{"@type":"Answer","text":"kkguai 是一款免费开源的 macOS RemoteApp 客户端，基于 Pstsc（FreeRDP）构建。它连接一台已有的 Windows 10/11 专业版电脑，把单个 Windows 程序变成 Mac 上的原生窗口：一个程序一个窗口、一个 Dock 图标。"}},
+{"@type":"Question","name":"需要什么版本的 Windows？","acceptedAnswer":{"@type":"Answer","text":"Windows 10 / 11 专业版或企业版，或 Windows Server，并开启远程桌面。家庭版不能作为远程桌面主机。"}},
+{"@type":"Question","name":"Windows 家庭版真的不能用吗？","acceptedAnswer":{"@type":"Answer","text":"不能作为主机。微软从系统层面限制家庭版接受远程桌面连接，没有开关可以打开。可以升级到专业版，或改用 Parallels、UTM 这类虚拟机方案。"}},
+{"@type":"Question","name":"Windows 电脑要一直开着吗？","acceptedAnswer":{"@type":"Answer","text":"要。程序实际上运行在那台电脑上，kkguai 只负责显示窗口和发送输入。那台电脑休眠、关机或断网，窗口就会消失。"}},
+{"@type":"Question","name":"不在同一个局域网能用吗？","acceptedAnswer":{"@type":"Answer","text":"能。只要能建立网络可达的路径即可：VPN、Tailscale、端口转发都可以。推荐 VPN 或 Tailscale，不要把 3389 端口直接暴露在公网。"}},
+{"@type":"Question","name":"为什么首次打开要执行 xattr 命令？","acceptedAnswer":{"@type":"Answer","text":"发布包是 ad-hoc 签名，还没有经过 Apple 公证。下载后 macOS 会给它加上隔离标记，导致「已损坏」或「无法验证开发者」的提示。去掉隔离标记只需要一条 xattr 命令，每次安装执行一次。"}},
+{"@type":"Question","name":"不执行 xattr 会怎样？有别的办法吗？","acceptedAnswer":{"@type":"Answer","text":"macOS 会拒绝启动，提示应用已损坏或无法验证开发者。可以执行 xattr -dr com.apple.quarantine /Applications/kkguai.app，或右键应用选择「打开」并在系统设置中允许一次。前者更省事。"}},
+{"@type":"Question","name":"安全吗？RDP 在局域网、VPN 和 Tailscale 上分别怎么样？","acceptedAnswer":{"@type":"Answer","text":"连接使用标准 RDP 并加密传输，建议启用网络级身份验证。局域网内风险最低；VPN 与 Tailscale 把流量包在加密隧道里，跨网络也安全；不要直接把 3389 暴露到公网，并给 Windows 账号设置强密码。"}},
+{"@type":"Question","name":"支持多显示器吗？","acceptedAnswer":{"@type":"Answer","text":"支持。Mac 的显示器布局会同步给远程会话，窗口可以跨屏拖动，不需要每次重新摆放。"}},
+{"@type":"Question","name":"中文、日文、韩文输入法能用吗？","acceptedAnswer":{"@type":"Answer","text":"能。拼音等输入在 Mac 上合成，候选框也在 Mac 上显示，选好的字以 Unicode 发送到 Windows，不会远端再合成一遍，也不会丢字。"}},
+{"@type":"Question","name":"Intel Mac 能用吗？","acceptedAnswer":{"@type":"Answer","text":"当前发布包只支持 Apple Silicon（M 系列）。Intel Mac 可以从源码自行构建，步骤见仓库的构建说明。"}},
+{"@type":"Question","name":"和 Parallels Desktop 有什么区别？","acceptedAnswer":{"@type":"Answer","text":"Parallels 在 Mac 里运行一整台 Windows 虚拟机，需要订阅费和 Windows 授权，并占用 Mac 的内存与磁盘。kkguai 使用你已有的 Windows 电脑，免费、开源，不占 Mac 资源；代价是那台电脑必须开机且网络可达。"}},
+{"@type":"Question","name":"收费吗？开源吗？","acceptedAnswer":{"@type":"Answer","text":"免费，MIT 许可开源，源码在 GitHub 上。没有订阅、没有内购，也没有账号体系。"}},
+{"@type":"Question","name":"可以用 Windows Server 做主机吗？","acceptedAnswer":{"@type":"Answer","text":"可以。Windows Server 自带远程桌面服务，导入 enable-remoteapp.reg 后同样可以作为主机使用。"}},
+{"@type":"Question","name":"同一个账号已经在 Windows 上登录桌面会话，会怎样？","acceptedAnswer":{"@type":"Answer","text":"单会话模式下，同一账号已有桌面登录时，新的程序会话可能无法创建。先退出那台电脑上的桌面会话，或按发布包的说明使用 single-session.reg。"}}
+]},
+{"@type":"BreadcrumbList","@id":"https://kkguai666.github.io/kkguai/faq.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"kkguai","item":"https://kkguai666.github.io/kkguai/"},{"@type":"ListItem","position":2,"name":"常见问题","item":"https://kkguai666.github.io/kkguai/faq.html"}]}
+]}
+</script>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="kkguai 首页">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html">RemoteApp 指南</a>
+      <a href="vs-parallels.html">方案对比</a>
+      <a href="faq.html" aria-current="page">常见问题</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <a class="lang-btn" href="en/faq.html" hreflang="en" aria-label="Switch to English">EN</a>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap doc-head">
+    <nav class="crumbs" aria-label="面包屑">
+      <a href="index.html">kkguai</a><span class="sep">/</span><span>指南</span><span class="sep">/</span><span aria-current="page">常见问题</span>
+    </nav>
+    <p class="kicker" style="margin-top:22px"><span class="dot"></span>15 个问题 · 长问答</p>
+    <h1 class="doc-title">常见问题</h1>
+    <p class="doc-lede">首页上的七个问题是入门版。这里把每个问题展开，并补上家庭版、公证与 xattr、RDP 的安全性、多显示器、中日韩输入、Intel Mac 这些经常被追问的部分。</p>
+    <div class="doc-meta">
+      <span>版本 0.1.1</span>
+      <span>更新于 2026-11-23</span>
+      <span>另有 <a href="troubleshooting.html" style="color:var(--blue)">排障指南</a></span>
+    </div>
+
+    <div class="toc">
+      <b>分类</b>
+      <ol>
+        <li><a href="#basics">基本概念</a></li>
+        <li><a href="#setup">安装与首次启动</a></li>
+        <li><a href="#daily">日常使用</a></li>
+        <li><a href="#security">安全与网络</a></li>
+        <li><a href="#alternatives">替代方案与授权</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="doc prose">
+    <section id="basics">
+      <h2>基本概念</h2>
+      <div class="faq">
+        <details open>
+          <summary><span>kkguai 是什么？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>kkguai 是一款免费、开源的 macOS RemoteApp 客户端，基于 <a href="https://github.com/kkguai666/kkguai">Pstsc</a>（FreeRDP）构建。它连接一台已有的 Windows 10/11 专业版电脑，把单个 Windows 程序变成 Mac 上的原生窗口：一个程序一个窗口、一个 Dock 图标，可以和平常的 Mac 应用并排使用。</p>
+            <p>它不是虚拟机，也不是整块远程桌面。程序本身运行在那台 Windows 电脑上，Mac 只负责显示和输入。</p>
+          </div>
+        </details>
+        <details id="windows-version">
+          <summary><span>需要什么版本的 Windows？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Windows 10 或 11 的<b>专业版、企业版</b>，或者 Windows Server，并开启「远程桌面」。RDP 不接受空密码账号，所以还需要一个设置了密码的 Windows 账号。</p>
+            <p>一条命令确认版本：按 <kbd>Win</kbd> + <kbd>R</kbd>，输入 <code>winver</code>。</p>
+          </div>
+        </details>
+        <details id="windows-home">
+          <summary><span>Windows 家庭版真的不能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p><b>作为主机不能。</b>微软从系统层面限制家庭版接受远程桌面连接，设置里没有远程桌面开关，注册表也没有可靠的绕过方法。这不是 kkguai 的限制，而是 Windows 产品线的区别。</p>
+            <p>可行方向有三个：</p>
+            <ul>
+              <li>把家庭版升级到专业版（需要购买升级或更换授权）。</li>
+              <li>用 Parallels Desktop 或 UTM 在 Mac 里跑一台 Windows 虚拟机——客户端机器用什么系统版本都行。</li>
+              <li>把程序换到一台已经是专业版的电脑上运行。详见 <a href="vs-parallels.html">方案对比</a>。</li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary><span>Windows 电脑要一直开着吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>要。程序运行在那台机器上，kkguai 只负责显示窗口和发送输入。那台电脑休眠、关机或断网，Mac 上的窗口就会消失。</p>
+            <p>如果它经常休眠，可以在 Windows 的电源设置里把睡眠关掉，办公室台式机通常本来就一直开着。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>可以用 Windows Server 做主机吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>可以。Windows Server 自带远程桌面服务，导入 <code>enable-remoteapp.reg</code> 之后同样可以作为 RemoteApp 主机使用。服务器版本的多用户授权规则由你的环境决定，kkguai 不改变这部分。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="setup">
+      <h2>安装与首次启动</h2>
+      <div class="faq">
+        <details id="xattr">
+          <summary><span>为什么首次打开要执行 xattr 命令？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>发布包经过了 ad-hoc 签名，但还没有经过 Apple 的公证（notarization）。macOS 对下载来的应用会加一个隔离标记（com.apple.quarantine），未公证的应用被标记后，系统会拒绝直接启动。</p>
+            <p>去掉标记只需要一条命令，每次安装执行一次：</p>
+            <div class="code-card">
+              <div class="code-head"><span class="file-name">macOS · Terminal</span></div>
+              <pre><span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app</pre>
+            </div>
+            <p>之后每次打开都不需要再执行。</p>
+          </div>
+        </details>
+        <details id="xattr-alt">
+          <summary><span>不执行 xattr 会怎样？有别的办法吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>macOS 会提示「kkguai 已损坏，无法打开」或「无法验证开发者」。这不是文件真的损坏，只是隔离策略。</p>
+            <p>除了 <code>xattr</code>，也可以在 Finder 里右键点击应用、选择「打开」，然后在弹窗里再确认一次；或者在「系统设置 → 隐私与安全性」里点「仍要打开」。这两种方式同样只对当前安装有效，而且提示文案会因 macOS 版本略有不同。命令行一次执行到底，最不容易出错。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>导入 enable-remoteapp.reg 之后需要重启吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>需要。注册表改动涉及远程桌面服务的会话行为，重启后才会稳定生效。如果导入后开始菜单里看不到程序，第一件要确认的事就是有没有重启、以及是否用管理员权限导入。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>同一个账号已经在 Windows 上登录桌面会话，会怎样？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>单会话模式下，同一账号已经有桌面登录时，新的程序会话可能无法创建，kkguai 会报与「已登录」相关的错误。先在那台电脑上退出桌面会话，再连接。</p>
+            <p>如果你希望桌面登录和 RemoteApp 并存，按发布包里的说明使用 <code>single-session.reg</code>；不确定的话先不导入，遇到问题再试。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="daily">
+      <h2>日常使用</h2>
+      <div class="faq">
+        <details id="monitors">
+          <summary><span>支持多显示器吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>支持。Mac 的显示器布局会同步给远程会话，窗口可以跨屏拖动，不用每次重新摆一遍。外接屏、Studio Display、合盖接显示器这些常见组合都按 Mac 的布局来。</p>
+          </div>
+        </details>
+        <details id="input">
+          <summary><span>中文、日文、韩文输入法能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>能。拼音在 Mac 上合成，候选框在 Mac 上弹出，选好的字以 Unicode 发送到 Windows。远端不会再合成一遍，所以不会出现「打一串出来两遍」或者丢字的情况。日文和韩文输入走同一套机制。</p>
+          </div>
+        </details>
+        <details id="intel">
+          <summary><span>Intel Mac 能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>当前发布包只支持 Apple Silicon（M 系列），要求 macOS 14 或更新。</p>
+            <p>Intel Mac 可以从源码自行构建。仓库里有构建说明，需要 Xcode 以及 FreeRDP 的依赖；构建出来的功能与发布包一致，但没有现成的安装包和签名。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>能同时打开多个程序吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>能。开始菜单里的程序可以同时打开多个，每个都是独立的 Mac 窗口和 Dock 图标，可以分别全屏、分屏或跨显示器摆放。它们共享同一条到 Windows 的连接。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2>安全与网络</h2>
+      <div class="faq">
+        <details id="lan">
+          <summary><span>不在同一个局域网能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>能。只要能建立一条网络可达的路径：VPN、Tailscale、端口转发都可以。Tailscale 会给你一台设备的固定地址或 MagicDNS 名称，直接填进 kkguai 即可。</p>
+            <p>推荐 VPN 或 Tailscale，而不是在路由器上把 3389 端口转发到公网。</p>
+          </div>
+        </details>
+        <details id="security">
+          <summary><span>安全吗？RDP 在局域网、VPN 和 Tailscale 上分别怎么样？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>连接走标准 RDP，传输是加密的。安全程度主要取决于你把主机暴露在哪里：</p>
+            <ul>
+              <li><b>局域网：</b>风险最低。只有同一网络里的设备能尝试连接，配合强密码和账号锁定策略就足够日常使用。</li>
+              <li><b>VPN：</b>流量包在加密隧道里，外部看不到 RDP 端口。安全性取决于 VPN 本身，公司 VPN 通常已经做了访问控制。</li>
+              <li><b>Tailscale：</b>基于 WireGuard 的点对点加密网络，设备之间互相认证，端口不对公网开放。对个人用户来说是很省事的选择。</li>
+            </ul>
+            <p><b>不建议</b>把 3389 直接映射到公网。那会收到大量自动化爆破，即使有密码也不值得冒这个风险。另外请使用带密码的账号，并开启 Windows 的网络级身份验证（NLA）。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>数据会不会经过第三方服务器？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>不会。kkguai 是直连客户端：画面和输入在两台设备之间走 RDP 连接，没有中转服务器，也没有账号体系。使用 Tailscale 时，数据走 Tailscale 的加密网络（通常点对点直连），与 kkguai 无关。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="alternatives">
+      <h2>替代方案与授权</h2>
+      <div class="faq">
+        <details id="parallels">
+          <summary><span>和 Parallels Desktop 有什么区别？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>Parallels 在 Mac 里运行一整台 Windows 虚拟机，并用 Coherence 模式把程序窗口画到 Mac 桌面上。它需要订阅费（约 $99/年起）和一份 Windows 授权，并占用 Mac 的内存、CPU 和几十 GB 磁盘；好处是离线可用、不需要第二台电脑。</p>
+            <p>kkguai 用你已有的 Windows 电脑，免费、开源，几乎不占 Mac 资源；代价是那台电脑必须开着并且网络可达，而且必须是专业版。完整对比见 <a href="vs-parallels.html">方案对比</a>。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>收费吗？开源吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>免费，MIT 许可开源，源码在 <a href="https://github.com/kkguai666/kkguai">GitHub</a> 上。没有订阅、没有内购，也没有账号体系。如果它帮你省下了一个 Parallels 订阅，给仓库点个 star 就是最好的支持。</p>
+          </div>
+        </details>
+        <details>
+          <summary><span>为什么叫 RemoteApp？和微软的 RemoteApp 是一回事吗？</span><span class="plus">+</span></summary>
+          <div class="answer">
+            <p>RemoteApp 是 RDP 协议里「只发布单个程序窗口」的能力，kkguai 用的是 Windows 自带的这套能力。企业里通常通过 RDS / AVD 部署微软官方的 RemoteApp；kkguai 面向的是单台 Windows 专业版电脑，用发布包里的注册表文件打开这项能力。两者在协议层是同一件事，部署方式不同。</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <p style="margin-top:40px;font-size:13px;color:var(--dim)">没有找到你的问题？看 <a href="troubleshooting.html" style="color:var(--blue)">排障指南</a>，或在 <a href="https://github.com/kkguai666/kkguai/issues" style="color:var(--blue)">GitHub Issues</a> 提问。</p>
+
+    <div class="related">
+      <span class="related-label">相关页面</span>
+      <a href="remoteapp-guide.html"><b>RemoteApp 指南</b><span>从开启远程桌面到第一个窗口的五步操作。</span></a>
+      <a href="vs-parallels.html"><b>方案对比</b><span>kkguai、Parallels、Windows App、UTM 各自适合谁。</span></a>
+    </div>
+
+    <div class="endcap">
+      <h2>还有一件事需要你做</h2>
+      <p>一台开着的 Windows 10/11 专业版电脑。其余交给我们，五分钟。</p>
+      <div class="row">
+        <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest">下载 kkguai</a>
+        <a class="btn btn-ghost" href="remoteapp-guide.html">看安装指南</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap foot">
+      <a class="brand" href="index.html">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+        kkguai
+      </a>
+      <span>MIT 许可 · 基于 Pstsc</span>
+      <span class="spacer"></span>
+      <a href="index.html">首页</a>
+      <a href="remoteapp-guide.html">RemoteApp 指南</a>
+      <a href="vs-parallels.html">方案对比</a>
+      <a href="faq.html">常见问题</a>
+      <a href="troubleshooting.html">排障</a>
+      <a href="https://github.com/kkguai666/kkguai">代码仓库</a>
+      <a href="en/faq.html" hreflang="en" lang="en">English</a>
+    </div>
+  </footer>
+</main>
+
+</body>
+</html>
