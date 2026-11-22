@@ -23,14 +23,20 @@ final class ConnectWindowController: NSWindowController {
     private let signOutButton = NSButton(title: L("기존 세션 로그아웃 후 연결"), target: nil, action: nil)
     private let connectButton = NSButton(title: L("연결"), target: nil, action: nil)
     private let rememberBox = NSButton(checkboxWithTitle: L("비밀번호를 키체인에 저장하고 다음부터 자동 연결"), target: nil, action: nil)
+    private let profilePopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let scanButton = NSButton(title: L("네트워크에서 찾기"), target: nil, action: nil)
+    private let scanStatus = NSTextField(labelWithString: "")
+    private let scanner = NetworkScanner()
+    private var discovered: [NetworkScanner.Host] = []
 
     private enum Key {
         static let host = "host"
         static let user = "username"
+        static let recent = "recentPCs"
     }
 
     init() {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 230),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 320),
                               styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = L("kkguai — 원격 PC 연결")
         super.init(window: window)
@@ -60,11 +66,25 @@ final class ConnectWindowController: NSWindowController {
         signOutButton.bezelStyle = .push
         signOutButton.isHidden = true
 
+        profilePopUp.target = self
+        profilePopUp.action = #selector(profileChosen)
+        profilePopUp.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        scanButton.bezelStyle = .rounded
+        scanButton.target = self
+        scanButton.action = #selector(scanNetwork)
+        scanStatus.textColor = .secondaryLabelColor
+        scanStatus.font = .systemFont(ofSize: 11)
+        let scanRow = NSStackView(views: [scanButton, scanStatus])
+        scanRow.orientation = .horizontal
+        scanRow.spacing = 10
+
         let grid = NSGridView(views: [
+            [NSTextField(labelWithString: L("저장된 PC")), profilePopUp],
             [NSTextField(labelWithString: L("원격 PC 주소")), hostField],
             [NSTextField(labelWithString: L("사용자")), userField],
             [NSTextField(labelWithString: L("비밀번호")), passwordField],
             [NSGridCell.emptyContentView, rememberBox],
+            [NSGridCell.emptyContentView, scanRow],
         ])
         rememberBox.state = .on
         grid.column(at: 0).xPlacement = .trailing
@@ -94,6 +114,7 @@ final class ConnectWindowController: NSWindowController {
             stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
         ])
         window.contentView = content
+        reloadProfiles()
         window.center()
         window.initialFirstResponder = hostField.stringValue.isEmpty ? hostField : passwordField
     }
@@ -108,6 +129,7 @@ final class ConnectWindowController: NSWindowController {
         userField.stringValue = defaults.string(forKey: Key.user) ?? ""
         passwordField.stringValue = ""
         setBusy(false, status: connected ? L("연결을 누르면 지금 연결이 끊기고 새 PC로 연결합니다.") : "")
+        reloadProfiles()
         window?.makeFirstResponder(hostField)
     }
 
@@ -137,11 +159,74 @@ final class ConnectWindowController: NSWindowController {
         let defaults = UserDefaults.standard
         defaults.set(host, forKey: Key.host)
         defaults.set(user, forKey: Key.user)
+        rememberRecent(host: host, user: user)
 
         let credentials = Credentials(host: host, username: user, password: passwordField.stringValue)
         passwordField.stringValue = ""
         setBusy(true, status: L("연결 중… %d%%", Int32(0)))
         onConnect?(credentials, rememberBox.state == .on)
+    }
+
+    // MARK: Saved PCs and discovery
+
+    private func rememberRecent(host: String, user: String) {
+        let defaults = UserDefaults.standard
+        var list = (defaults.array(forKey: Key.recent) as? [[String: String]]) ?? []
+        list.removeAll { $0["host"]?.lowercased() == host.lowercased() }
+        list.insert(["host": host, "user": user], at: 0)
+        defaults.set(Array(list.prefix(8)), forKey: Key.recent)
+        reloadProfiles()
+    }
+
+    private func reloadProfiles() {
+        profilePopUp.removeAllItems()
+        let recents = (UserDefaults.standard.array(forKey: Key.recent) as? [[String: String]]) ?? []
+        if recents.isEmpty && discovered.isEmpty {
+            profilePopUp.addItem(withTitle: L("저장된 PC 없음"))
+            profilePopUp.isEnabled = false
+            return
+        }
+        profilePopUp.isEnabled = true
+        for entry in recents {
+            guard let host = entry["host"] else { continue }
+            let user = entry["user"] ?? ""
+            profilePopUp.addItem(withTitle: user.isEmpty ? host : "\(user) @ \(host)")
+            profilePopUp.lastItem?.representedObject = [host, user]
+        }
+        if !discovered.isEmpty {
+            if !recents.isEmpty { profilePopUp.menu?.addItem(.separator()) }
+            let header = NSMenuItem(title: L("이 네트워크에서"), action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            profilePopUp.menu?.addItem(header)
+            for host in discovered {
+                let name = host.label.map { "\($0) — " } ?? ""
+                profilePopUp.addItem(withTitle: "\(name)\(host.address) · \(host.latencyMS) ms")
+                profilePopUp.lastItem?.representedObject = [host.address, ""]
+            }
+        }
+        // Do not land on the disabled "On This Network" header when there are no recent PCs.
+        profilePopUp.selectItem(at: recents.isEmpty ? 1 : 0)
+    }
+
+    @objc private func profileChosen() {
+        guard let pair = profilePopUp.selectedItem?.representedObject as? [String], pair.count == 2 else { return }
+        hostField.stringValue = pair[0]
+        if !pair[1].isEmpty { userField.stringValue = pair[1] }
+        window?.makeFirstResponder(passwordField)
+    }
+
+    @objc private func scanNetwork() {
+        scanButton.isEnabled = false
+        scanStatus.stringValue = L("검색 중…")
+        scanner.scan { [weak self] hosts in
+            guard let self else { return }
+            self.discovered = hosts
+            self.scanButton.isEnabled = true
+            self.scanStatus.stringValue = hosts.isEmpty
+                ? L("3389 포트를 여는 PC를 찾지 못했습니다.")
+                : L("%d대 발견", hosts.count)
+            self.reloadProfiles()
+        }
     }
 
     @objc private func signOutAndConnect() {
