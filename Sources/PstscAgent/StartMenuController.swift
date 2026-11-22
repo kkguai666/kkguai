@@ -9,7 +9,7 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
 
     var onLaunch: ((RemoteApp) -> Void)?
     var onPower: ((PowerAction) -> Void)?
-    var userName = "" { didSet { userLabel.stringValue = userName } }
+    var userName = ""
     var isDesktopMode = false
 
     private let catalog: AppCatalog
@@ -30,22 +30,31 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     private let pinnedGrid = NSGridView()
     private let loadingLabel = NSTextField(wrappingLabelWithString: "")
     private let recentGrid = NSGridView()
-    private let recentEmptyLabel = NSTextField(wrappingLabelWithString:
-        L("최근에 실행한 앱이 여기에 표시됩니다. 고정하려면 앱을 우클릭하세요."))
     private let listView = NSStackView()
     private let listTitle = NSTextField(labelWithString: L("모든 앱"))
     private let backButton = NSButton()
     private let table = NSTableView()
-    private let userLabel = NSTextField(labelWithString: "")
 
-    private static let size = NSSize(width: 640, height: 720)
+    private lazy var powerButton: NSButton = {
+        let button = NSButton(image: NSImage(systemSymbolName: "power", accessibilityDescription: L("전원"))!,
+                              target: self, action: #selector(showPowerMenu(_:)))
+        button.isBordered = false
+        button.contentTintColor = NSColor(white: 0.9, alpha: 1)
+        button.symbolConfiguration = .init(pointSize: 15, weight: .regular)
+        button.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        return button
+    }()
+
+    private static let width: CGFloat = 640
+    private static let listHeight: CGFloat = 560
     private static let columns = 6
 
     init(catalog: AppCatalog, icons: AppIconStore, prefs: StartMenuPrefs) {
         self.catalog = catalog
         self.icons = icons
         self.prefs = prefs
-        let panel = StartMenuPanel(contentRect: NSRect(origin: .zero, size: Self.size),
+        let panel = StartMenuPanel(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: Self.listHeight),
                                    styleMask: [.borderless], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -73,12 +82,12 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     /// Opens centered above the Dock on the screen with the mouse, like Windows 11.
     func present() {
         guard let window else { return }
+        searchField.stringValue = ""
+        show(.home)
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame
-        window.setFrameOrigin(NSPoint(x: (visible.midX - Self.size.width / 2).rounded(), y: visible.minY + 12))
-        searchField.stringValue = ""
-        show(.home)
+        window.setFrameOrigin(NSPoint(x: (visible.midX - window.frame.width / 2).rounded(), y: visible.minY + 12))
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(searchField)
@@ -112,9 +121,16 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         tint.layer?.backgroundColor = NSColor(calibratedWhite: 0.13, alpha: 0.88).cgColor
 
         let search = makeSearchBox()
+        search.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        search.setContentHuggingPriority(.init(1), for: .horizontal)
+        let allButton = Self.pillButton(title: L("모두  ›"), target: self, action: #selector(showAll))
+        let topBar = NSStackView(views: [search, allButton, powerButton])
+        topBar.orientation = .horizontal
+        topBar.spacing = 10
+        topBar.alignment = .centerY
+
         buildHome()
         buildList()
-        let footer = makeFooter()
 
         let body = NSView()
         for view in [homeView, listView] as [NSView] {
@@ -128,7 +144,7 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
             ])
         }
 
-        for view in [tint, search, body, footer] as [NSView] {
+        for view in [tint, topBar, body] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             background.addSubview(view)
         }
@@ -138,22 +154,24 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
             tint.topAnchor.constraint(equalTo: background.topAnchor),
             tint.bottomAnchor.constraint(equalTo: background.bottomAnchor),
 
-            search.topAnchor.constraint(equalTo: background.topAnchor, constant: 32),
-            search.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 32),
-            search.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -32),
-            search.heightAnchor.constraint(equalToConstant: 34),
+            topBar.topAnchor.constraint(equalTo: background.topAnchor, constant: 24),
+            topBar.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 32),
+            topBar.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -32),
 
-            body.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 28),
+            body.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 24),
             body.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 32),
             body.trailingAnchor.constraint(equalTo: background.trailingAnchor, constant: -32),
-            body.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
-
-            footer.leadingAnchor.constraint(equalTo: background.leadingAnchor),
-            footer.trailingAnchor.constraint(equalTo: background.trailingAnchor),
-            footer.bottomAnchor.constraint(equalTo: background.bottomAnchor),
-            footer.heightAnchor.constraint(equalToConstant: 66),
+            body.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -28),
         ])
         window?.contentView = background
+    }
+
+    /// Home is a short panel that hugs its icons; the searchable list keeps a fixed height.
+    private func fitWindow(_ page: Page) {
+        guard let window, let content = window.contentView else { return }
+        content.layoutSubtreeIfNeeded()
+        let height = page == .home ? min(max(content.fittingSize.height, 220), 660) : Self.listHeight
+        window.setContentSize(NSSize(width: Self.width, height: height))
     }
 
     private func makeSearchBox() -> NSView {
@@ -193,34 +211,21 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     }
 
     private func buildHome() {
-        let allButton = Self.pillButton(title: L("모두  ›"), target: self, action: #selector(showAll))
-        let pinnedHeader = Self.sectionHeader(L("고정됨"), accessory: allButton)
-
         pinnedGrid.rowSpacing = 4
         pinnedGrid.columnSpacing = 4
 
-        let recentHeader = Self.sectionHeader(L("맞춤"), accessory: nil)
         recentGrid.rowSpacing = 4
-        recentGrid.columnSpacing = 8
-        recentEmptyLabel.textColor = NSColor(white: 1, alpha: 0.75)
-        recentEmptyLabel.font = .systemFont(ofSize: 12)
+        recentGrid.columnSpacing = 4
 
         loadingLabel.textColor = NSColor(white: 1, alpha: 0.75)
         loadingLabel.font = .systemFont(ofSize: 12)
 
-        let spacer = NSView()
-        spacer.setContentHuggingPriority(.init(1), for: .vertical)
-
         homeView.orientation = .vertical
         homeView.alignment = .leading
-        homeView.spacing = 14
+        homeView.spacing = 16
         let loadingRow = Self.row(loadingLabel, accessory: nil)
-        let recentEmpty = Self.row(recentEmptyLabel, accessory: nil)
-        homeView.setViews([pinnedHeader, loadingRow, pinnedGrid, spacer, recentHeader, recentGrid, recentEmpty], in: .top)
-        for view in [pinnedHeader, loadingRow, recentHeader, recentEmpty] as [NSView] {
-            view.widthAnchor.constraint(equalTo: homeView.widthAnchor).isActive = true
-        }
-        homeView.setCustomSpacing(30, after: spacer)
+        homeView.setViews([loadingRow, pinnedGrid, recentGrid], in: .top)
+        loadingRow.widthAnchor.constraint(equalTo: homeView.widthAnchor).isActive = true
     }
 
     private func buildList() {
@@ -256,40 +261,6 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         scroll.setContentHuggingPriority(.init(1), for: .vertical)
     }
 
-    private func makeFooter() -> NSView {
-        let footer = NSView()
-        footer.wantsLayer = true
-        footer.layer?.backgroundColor = NSColor(calibratedWhite: 0.09, alpha: 0.9).cgColor
-
-        let avatar = NSImageView(image: NSImage(systemSymbolName: "person.crop.circle.fill", accessibilityDescription: nil)!)
-        avatar.symbolConfiguration = .init(pointSize: 26, weight: .regular)
-        avatar.contentTintColor = NSColor(white: 0.85, alpha: 1)
-        userLabel.textColor = .white
-        userLabel.font = .systemFont(ofSize: 12)
-
-        let power = NSButton(image: NSImage(systemSymbolName: "power", accessibilityDescription: L("전원"))!,
-                             target: self, action: #selector(showPowerMenu(_:)))
-        power.isBordered = false
-        power.contentTintColor = .white
-        power.symbolConfiguration = .init(pointSize: 15, weight: .regular)
-
-        for view in [avatar, userLabel, power] as [NSView] {
-            view.translatesAutoresizingMaskIntoConstraints = false
-            footer.addSubview(view)
-        }
-        NSLayoutConstraint.activate([
-            avatar.leadingAnchor.constraint(equalTo: footer.leadingAnchor, constant: 56),
-            avatar.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            userLabel.leadingAnchor.constraint(equalTo: avatar.trailingAnchor, constant: 12),
-            userLabel.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            power.trailingAnchor.constraint(equalTo: footer.trailingAnchor, constant: -56),
-            power.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
-            power.widthAnchor.constraint(equalToConstant: 32),
-            power.heightAnchor.constraint(equalToConstant: 32),
-        ])
-        return footer
-    }
-
     // MARK: Pages
 
     private func show(_ newPage: Page) {
@@ -318,6 +289,7 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
             rows = ranked.isEmpty ? [.header(L("'%@'에 대한 결과가 없습니다", query))] : ranked.map { .app($0) }
             reloadTable()
         }
+        fitWindow(newPage)
     }
 
     @objc private func showAll() { show(.all) }
@@ -343,11 +315,10 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         }
 
         Self.clear(recentGrid)
-        let recent = prefs.recent(in: catalog.apps)
-        recentEmptyLabel.superview?.isHidden = !recent.isEmpty
-        for start in stride(from: 0, to: recent.count, by: 2) {
-            let items: [NSView] = recent[start..<min(start + 2, recent.count)].map { makeRecentItem(for: $0) }
-            recentGrid.addRow(with: items)
+        let recent = Array(prefs.recent(in: catalog.apps).prefix(3))
+        recentGrid.isHidden = recent.isEmpty
+        if !recent.isEmpty {
+            recentGrid.addRow(with: recent.map { makeTile(for: $0) })
         }
     }
 
@@ -380,17 +351,10 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
     // MARK: Tiles
 
     private func makeTile(for app: RemoteApp) -> NSView {
-        let tile = AppTileView(app: app, icon: icons.icon(for: app), compact: false)
+        let tile = AppTileView(app: app, icon: icons.icon(for: app))
         tile.onClick = { [weak self] in self?.launch(app) }
         tile.menuProvider = { [weak self] in self?.contextMenu(for: app) }
         return tile
-    }
-
-    private func makeRecentItem(for app: RemoteApp) -> NSView {
-        let item = AppTileView(app: app, icon: icons.icon(for: app), compact: true)
-        item.onClick = { [weak self] in self?.launch(app) }
-        item.menuProvider = { [weak self] in self?.contextMenu(for: app) }
-        return item
     }
 
     private func contextMenu(for app: RemoteApp) -> NSMenu {
@@ -563,13 +527,6 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
         return "#"
     }
 
-    private static func sectionHeader(_ title: String, accessory: NSView?) -> NSView {
-        let label = NSTextField(labelWithString: title)
-        label.font = .boldSystemFont(ofSize: 14)
-        label.textColor = .white
-        return row(label, accessory: accessory)
-    }
-
     private static func row(_ left: NSView, accessory: NSView?) -> NSView {
         let spacer = NSView()
         spacer.setContentHuggingPriority(.init(1), for: .horizontal)
@@ -646,55 +603,41 @@ private final class StartMenuPanel: NSPanel {
     override func cancelOperation(_ sender: Any?) { onCancel?() }
 }
 
-/// One app in the pinned grid (icon above name) or the "맞춤" list (icon left of name).
+/// One app in the Start menu: icon above name.
 private final class AppTileView: NSView {
     var onClick: (() -> Void)?
     var menuProvider: (() -> NSMenu?)?
     private var hovering = false { didSet { needsDisplay = true } }
 
-    init(app: RemoteApp, icon: NSImage, compact: Bool) {
+    init(app: RemoteApp, icon: NSImage) {
         super.init(frame: .zero)
         let image = NSImageView(image: icon)
         image.contentTintColor = NSColor(white: 1, alpha: 0.7)
         image.imageScaling = .scaleProportionallyUpOrDown
         let label = NSTextField(labelWithString: app.name.trimmed)
         label.textColor = .white
-        label.font = .systemFont(ofSize: compact ? 13 : 11.5)
+        label.font = .systemFont(ofSize: 11.5)
         label.lineBreakMode = .byTruncatingTail
-        label.alignment = compact ? .left : .center
-        label.maximumNumberOfLines = compact ? 1 : 2
-        label.cell?.wraps = !compact
+        label.alignment = .center
+        label.maximumNumberOfLines = 2
+        label.cell?.wraps = true
         toolTip = app.name.trimmed
 
         for view in [image, label] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
-        if compact {
-            NSLayoutConstraint.activate([
-                widthAnchor.constraint(equalToConstant: 280),
-                heightAnchor.constraint(equalToConstant: 52),
-                image.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
-                image.centerYAnchor.constraint(equalTo: centerYAnchor),
-                image.widthAnchor.constraint(equalToConstant: 32),
-                image.heightAnchor.constraint(equalToConstant: 32),
-                label.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: 12),
-                label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -10),
-                label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                widthAnchor.constraint(equalToConstant: 92),
-                heightAnchor.constraint(equalToConstant: 86),
-                image.topAnchor.constraint(equalTo: topAnchor, constant: 12),
-                image.centerXAnchor.constraint(equalTo: centerXAnchor),
-                image.widthAnchor.constraint(equalToConstant: 36),
-                image.heightAnchor.constraint(equalToConstant: 36),
-                label.topAnchor.constraint(equalTo: image.bottomAnchor, constant: 6),
-                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
-                label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            ])
-        }
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 92),
+            heightAnchor.constraint(equalToConstant: 86),
+            image.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            image.centerXAnchor.constraint(equalTo: centerXAnchor),
+            image.widthAnchor.constraint(equalToConstant: 36),
+            image.heightAnchor.constraint(equalToConstant: 36),
+            label.topAnchor.constraint(equalTo: image.bottomAnchor, constant: 6),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+        ])
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
