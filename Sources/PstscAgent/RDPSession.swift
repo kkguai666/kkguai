@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import PstscRDP
 
 /// One RemoteApp window as reported by the server. Coordinates are remote desktop pixels
@@ -97,6 +98,8 @@ final class FrameStore: @unchecked Sendable {
     private var pixels: UnsafeMutableRawPointer?
     private var width = 0
     private var height = 0
+    /// Pixels changed since the last takeDirty(), in this store's own coordinates.
+    private var dirtySinceRead: CGRect = .null
     private let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
 
     deinit { pixels?.deallocate() }
@@ -110,27 +113,42 @@ final class FrameStore: @unchecked Sendable {
             width = desktopWidth
             height = desktopHeight
             pixels = UnsafeMutableRawPointer.allocate(byteCount: width * height * 4, alignment: 16)
-            copyRows(from: buffer, stride: stride, rect: CGRect(x: 0, y: 0, width: width, height: height))
-        } else {
-            copyRows(from: buffer, stride: stride, rect: dirty)
+            let whole = CGRect(x: 0, y: 0, width: width, height: height)
+            _ = copyRows(from: buffer, stride: stride, rect: whole)
+            dirtySinceRead = whole
+        } else if let r = copyRows(from: buffer, stride: stride, rect: dirty) {
+            dirtySinceRead = dirtySinceRead.union(r)
         }
     }
 
-    private func copyRows(from buffer: UnsafePointer<UInt8>, stride: Int, rect: CGRect) {
-        guard let pixels else { return }
+    /// Hands out the area changed since the last call, so only that part is rebuilt and uploaded.
+    func takeDirty() -> CGRect {
+        lock.lock()
+        defer { lock.unlock() }
+        let dirty = dirtySinceRead
+        dirtySinceRead = .null
+        return dirty
+    }
+
+    @discardableResult
+    private func copyRows(from buffer: UnsafePointer<UInt8>, stride: Int, rect: CGRect) -> CGRect? {
+        guard let pixels else { return nil }
         let r = rect.integral.intersection(CGRect(x: 0, y: 0, width: width, height: height))
-        guard !r.isEmpty else { return }
+        guard !r.isEmpty else { return nil }
         let rowBytes = Int(r.width) * 4
         for row in Int(r.minY)..<Int(r.maxY) {
             let src = buffer + row * stride + Int(r.minX) * 4
             let dst = pixels + row * width * 4 + Int(r.minX) * 4
             dst.copyMemory(from: src, byteCount: rowBytes)
         }
+        return r
     }
 
     /// Copies the given desktop rectangle into a standalone image. alpha: the pixels carry per-pixel
     /// alpha (GFX ARGB surfaces of layered windows such as menu shadows); otherwise the 4th byte is unused.
     func image(of rect: CGRect, alpha: Bool = false) -> CGImage? {
+        let started = CACurrentMediaTime()
+        defer { PerfStats.shared.recordImage(CACurrentMediaTime() - started) }
         lock.lock()
         defer { lock.unlock() }
 
@@ -140,14 +158,18 @@ final class FrameStore: @unchecked Sendable {
 
         let w = Int(r.width), h = Int(r.height)
         let rowBytes = w * 4
-        var data = Data(count: rowBytes * h)
-        data.withUnsafeMutableBytes { out in
-            for row in 0..<h {
-                let src = pixels + (Int(r.minY) + row) * width * 4 + Int(r.minX) * 4
-                (out.baseAddress! + row * rowBytes).copyMemory(from: src, byteCount: rowBytes)
-            }
+        let byteCount = rowBytes * h
+        // malloc (not Data(count:)): no zero-fill of the whole crop, and CGImage owns the buffer.
+        let buffer = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: 64)
+        for row in 0..<h {
+            let src = pixels + (Int(r.minY) + row) * width * 4 + Int(r.minX) * 4
+            (buffer + row * rowBytes).copyMemory(from: src, byteCount: rowBytes)
         }
-        guard let provider = CGDataProvider(data: data as CFData) else { return nil }
+        guard let provider = CGDataProvider(dataInfo: buffer, data: UnsafeRawPointer(buffer), size: byteCount,
+                                            releaseData: { info, _, _ in info?.deallocate() }) else {
+            buffer.deallocate()
+            return nil
+        }
         // FreeRDP BGRX32/BGRA32 == little-endian XRGB/ARGB
         let alphaInfo: CGImageAlphaInfo = alpha ? .first : .noneSkipFirst
         let info = CGBitmapInfo(rawValue: alphaInfo.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
@@ -223,6 +245,7 @@ final class RDPSession {
 
     func connect(_ options: Options) -> Bool {
         disconnect()
+        PerfStats.shared.start()
 
         var callbacks = PstscCallbacks()
         callbacks.user = Unmanaged.passUnretained(self).toOpaque()
@@ -245,6 +268,7 @@ final class RDPSession {
             guard let buffer else { return }
             let session = RDPSession.from(user)
             let dirty = CGRect(x: Int(x), y: Int(y), width: Int(width), height: Int(height))
+            PerfStats.shared.recordFrame(bytes: Int(width) * Int(height) * 4)
             session.frames.copy(from: buffer, stride: Int(stride), desktopWidth: Int(desktopWidth),
                                 desktopHeight: Int(desktopHeight), dirty: dirty)
             session.scheduleFlush(dirty: dirty)
@@ -281,6 +305,7 @@ final class RDPSession {
             guard let buffer else { return }
             let session = RDPSession.from(user)
             let dirty = CGRect(x: Int(x), y: Int(y), width: Int(width), height: Int(height))
+            PerfStats.shared.recordFrame(bytes: Int(width) * Int(height) * 4)
             session.surfaceStore(for: windowId).copy(from: buffer, stride: Int(stride), desktopWidth: Int(surfaceWidth),
                                                      desktopHeight: Int(surfaceHeight), dirty: dirty)
             session.scheduleFlush(windowId: windowId)
@@ -360,16 +385,19 @@ final class RDPSession {
     // MARK: Input (desktop coordinates)
 
     func mouseMove(to p: CGPoint) {
+        PerfStats.shared.recordInput()
         let q = inputPoint(p)
         pstsc_mouse_move(client, q.x, q.y)
     }
 
     func mouseButton(_ button: PstscMouseButton, down: Bool, at p: CGPoint) {
+        PerfStats.shared.recordInput()
         let q = inputPoint(p)
         pstsc_mouse_button(client, button, down, q.x, q.y)
     }
 
     func mouseWheel(horizontal: Bool, delta: Int, at p: CGPoint) {
+        PerfStats.shared.recordInput()
         let q = inputPoint(p)
         pstsc_mouse_wheel(client, horizontal, Int32(delta), q.x, q.y)
     }
@@ -378,10 +406,16 @@ final class RDPSession {
         (Int32(p.x - inputOrigin.x), Int32(p.y - inputOrigin.y))
     }
 
-    func key(_ macKeyCode: UInt16, down: Bool) { pstsc_key(client, macKeyCode, down) }
+    func key(_ macKeyCode: UInt16, down: Bool) {
+        PerfStats.shared.recordInput()
+        pstsc_key(client, macKeyCode, down)
+    }
 
     /// One UTF-16 code unit typed through the Mac input method (Chinese, Japanese, Korean).
-    func unicodeKey(_ codeUnit: UInt16, down: Bool) { pstsc_unicode_key(client, codeUnit, down) }
+    func unicodeKey(_ codeUnit: UInt16, down: Bool) {
+        PerfStats.shared.recordInput()
+        pstsc_unicode_key(client, codeUnit, down)
+    }
 
     func hangulKey(down: Bool) { pstsc_hangul_key(client, down) }
 

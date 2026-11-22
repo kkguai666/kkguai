@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import PstscRDP
 
 /// Keeps one Mac window per visible remote window, in step with the server's window orders.
@@ -102,18 +103,32 @@ final class RemoteWindowManager: NSObject, NSWindowDelegate {
     }
 
     func refresh(_ dirty: CGRect, windowIds: Set<UInt32>) {
+        let started = CACurrentMediaTime()
+        defer { PerfStats.shared.recordRefresh(CACurrentMediaTime() - started) }
         for window in windows.values {
             if windowIds.contains(window.remoteId) {
                 // The first surface update is what makes a window appear.
-                window.isVisible ? window.refresh(from: session) : present(window)
-            } else if !dirty.isNull && window.info.frame.intersects(dirty) {
                 if window.isVisible {
                     window.refresh(from: session)
+                } else {
+                    let started = CACurrentMediaTime()
+                    present(window)
+                    PerfStats.shared.recordPresent(CACurrentMediaTime() - started)
+                }
+            } else if !dirty.isNull && window.info.frame.intersects(dirty) {
+                if window.isVisible {
+                    // Windows with their own GFX surface only change when that surface changes;
+                    // repainting them for every desktop update just uploads the same pixels again.
+                    if session.surface(for: window.remoteId) == nil {
+                        window.refresh(from: session)
+                    }
                 } else if session.surface(for: window.remoteId) == nil && !window.hasFreshDesktopPixels
                             && !window.info.isPopup {
                     // Popups are skipped: invisible full-screen helper windows (e.g. "SNB") would cover everything.
                     window.hasFreshDesktopPixels = true
+                    let started = CACurrentMediaTime()
                     present(window)
+                    PerfStats.shared.recordPresent(CACurrentMediaTime() - started)
                 }
             }
         }

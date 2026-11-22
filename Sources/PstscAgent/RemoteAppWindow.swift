@@ -119,7 +119,7 @@ final class RemoteAppWindow: NSWindow {
     /// Uses the window's own GFX surface when the server sends one, else the shared desktop framebuffer.
     func refresh(from session: RDPSession) {
         if let surface = session.surface(for: remoteId) {
-            remoteView.show(surface.image(of: info.surfaceCrop, alpha: info.isLayered))
+            remoteView.showSurface(surface, crop: info.surfaceCrop, alpha: info.isLayered)
         } else {
             remoteView.show(session.frames.image(of: info.frame))
         }
@@ -164,6 +164,12 @@ final class RemoteContentView: NSView, NSTextInputClient {
     /// remote side never tells us where the text caret is.
     private var lastClickScreenPoint: NSPoint?
     private var cursorObserver: NSObjectProtocol?
+    /// Small layers holding only the pixels that changed, laid over the last full-window image.
+    private var patchLayers: [CALayer] = []
+    /// Size the full-window image was painted at; a window resize invalidates it.
+    private var baseSize = NSSize.zero
+    /// After this many patches, repaint the base and drop them (keeps layer count bounded).
+    private static let maxPatches = 32
 
     /// RemoteApp windows: the view sits where the remote window is, so map through screen coordinates.
     static let screenMapper: PointMapper = { point, view in
@@ -196,12 +202,65 @@ final class RemoteContentView: NSView, NSTextInputClient {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override var wantsUpdateLayer: Bool { true }
 
+    /// Paints the whole window (desktop-framebuffer windows and window resizes).
     func show(_ image: CGImage?) {
         guard let image else { return }
+        let started = CACurrentMediaTime()
+        applyBase(image)
+        PerfStats.shared.recordShow(CACurrentMediaTime() - started)
+    }
+
+    /// Paints only the part of a GFX surface that changed since the last call. The full-window
+    /// image is uploaded once; afterwards each update is a small overlay layer, so the cost of a
+    /// keystroke or a scroll step no longer scales with the window size.
+    func showSurface(_ store: FrameStore, crop: CGRect, alpha: Bool) {
+        let started = CACurrentMediaTime()
+        let dirty = store.takeDirty()
+        defer { PerfStats.shared.recordShow(CACurrentMediaTime() - started) }
+
+        if baseSize != bounds.size || layer?.contents == nil {
+            if let image = store.image(of: crop, alpha: alpha) { applyBase(image) }
+            return
+        }
+        let r = dirty.integral.intersection(crop)
+        guard !r.isEmpty, let image = store.image(of: r, alpha: alpha) else { return }
+        let s = DisplayScale.value
+        let local = r.offsetBy(dx: -crop.minX, dy: -crop.minY)
+        let patch = CALayer()
+        patch.contents = image
+        patch.contentsScale = s
+        patch.contentsGravity = .topLeft
+        patch.isOpaque = !alpha
+        patch.frame = CGRect(x: local.minX / s, y: local.minY / s,
+                             width: local.width / s, height: local.height / s)
+
+        // Older patches completely covered by this one are dead weight.
+        patchLayers = patchLayers.filter { old in
+            if patch.frame.contains(old.frame) {
+                old.removeFromSuperlayer()
+                return false
+            }
+            return true
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        layer?.contents = image
+        layer?.addSublayer(patch)
+        CATransaction.commit()
+        patchLayers.append(patch)
+
+        if patchLayers.count > Self.maxPatches, let full = store.image(of: crop, alpha: alpha) {
+            applyBase(full)
+        }
+    }
+
+    private func applyBase(_ image: CGImage) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         layer?.contentsScale = DisplayScale.value
+        layer?.contents = image
+        patchLayers.forEach { $0.removeFromSuperlayer() }
+        patchLayers.removeAll()
+        baseSize = bounds.size
         CATransaction.commit()
     }
 
