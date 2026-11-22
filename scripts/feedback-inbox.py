@@ -30,7 +30,11 @@ from pathlib import Path
 
 HOST = "win01"
 REMOTE_CMD = r"C:\Users\Administrator\.claude\skills\gmail-api\scripts\kkguai.cmd"
-QUERY = 'subject:[kkguai] newer_than:120d'
+# Only FormSubmit's own mail. The QQ copies we forward are sent from this same Gmail account,
+# and Gmail's search covers Sent too — without the sender filter every run would treat its own
+# copy as new feedback and forward it again, forever.
+QUERY = 'subject:[kkguai] from:submissions@formsubmit.co newer_than:120d'
+OWN_ADDRESS = 'sou79532@gmail.com'
 STATE_VERSION = 1
 DEFAULT_FORWARD = "1076822082@qq.com"
 
@@ -131,6 +135,8 @@ def main():
     for entry in reversed(listing):  # oldest first, so forwarding keeps the original order
         message_id = entry.get("id")
         if not message_id or (message_id in seen and not args.replay):
+            continue
+        if OWN_ADDRESS in (entry.get("from") or ""):
             continue
         try:
             full = gmail("read", message_id)
