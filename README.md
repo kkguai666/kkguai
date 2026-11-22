@@ -71,6 +71,8 @@ Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 
 Enable-NetFirewallRule -Group '@FirewallAPI.dll,-28752'
 ```
 
+然后导入 Release 附件里的 **`enable-remoteapp.reg`**（管理员权限，必需）和可选的 `single-session.reg`，重启 Windows。前者允许未注册为 RemoteApp 的程序以 Mac 窗口运行；不导入的话，程序可能起不来。
+
 两台机器需要在同一网络，或通过 VPN / Tailscale 互通。
 
 ### 2. 在 Mac 上安装
@@ -141,7 +143,7 @@ No Parallels subscription, no Windows licence, no virtual machine.
 
 **Why it exists:** remote desktop tools squeeze an entire Windows screen into one Mac window. kkguai does the opposite — it asks Windows for a single app and gives that app a real Mac window.
 
-**Requirements:** macOS 14+ on Apple Silicon; a Windows 10/11 Pro PC with Remote Desktop enabled; network reachability (LAN, VPN or Tailscale).
+**Requirements:** macOS 14+ on Apple Silicon; a Windows 10/11 Pro PC with Remote Desktop enabled; network reachability (LAN, VPN or Tailscale). On the Windows host, also import `enable-remoteapp.reg` from the release as administrator (required), and optionally `single-session.reg`.
 
 **Install:** download the latest `.dmg` from [Releases](https://github.com/kkguai666/kkguai/releases/latest), drag `kkguai.app` into Applications, then run `xattr -dr com.apple.quarantine /Applications/kkguai.app` once (the build is not notarized yet).
 
