@@ -191,6 +191,8 @@ final class RDPSession {
     private var flushScheduled = false
     private let surfacesLock = NSLock()
     private var surfaces: [UInt32: FrameStore] = [:]
+    /// Windows removed meanwhile: late surface updates for them must not recreate (and leak) a store.
+    private var removedSurfaces = Set<UInt32>()
 
     /// Pixels of one window when the server uses the graphics pipeline (one surface per window).
     func surface(for windowId: UInt32) -> FrameStore? {
@@ -202,12 +204,21 @@ final class RDPSession {
     func removeSurface(for windowId: UInt32) {
         surfacesLock.lock()
         surfaces[windowId] = nil
+        removedSurfaces.insert(windowId)
         surfacesLock.unlock()
     }
 
-    private func surfaceStore(for windowId: UInt32) -> FrameStore {
+    /// A window with this id exists again: allow its surface to be recreated.
+    func reviveSurface(for windowId: UInt32) {
+        surfacesLock.lock()
+        removedSurfaces.remove(windowId)
+        surfacesLock.unlock()
+    }
+
+    private func surfaceStore(for windowId: UInt32) -> FrameStore? {
         surfacesLock.lock()
         defer { surfacesLock.unlock() }
+        if removedSurfaces.contains(windowId) { return nil }
         if let store = surfaces[windowId] { return store }
         let store = FrameStore()
         surfaces[windowId] = store
@@ -258,6 +269,7 @@ final class RDPSession {
             guard let info else { return }
             let session = RDPSession.from(user)
             let window = RDPSession.makeWindowInfo(info.pointee)
+            session.reviveSurface(for: window.id)
             DispatchQueue.main.async { session.delegate?.session(session, windowChanged: window) }
         }
         callbacks.windowRemoved = { user, id in
@@ -306,8 +318,9 @@ final class RDPSession {
             let session = RDPSession.from(user)
             let dirty = CGRect(x: Int(x), y: Int(y), width: Int(width), height: Int(height))
             PerfStats.shared.recordFrame(bytes: Int(width) * Int(height) * 4)
-            session.surfaceStore(for: windowId).copy(from: buffer, stride: Int(stride), desktopWidth: Int(surfaceWidth),
-                                                     desktopHeight: Int(surfaceHeight), dirty: dirty)
+            guard let store = session.surfaceStore(for: windowId) else { return }
+            store.copy(from: buffer, stride: Int(stride), desktopWidth: Int(surfaceWidth),
+                       desktopHeight: Int(surfaceHeight), dirty: dirty)
             session.scheduleFlush(windowId: windowId)
         }
         callbacks.execResult = { user, result, _, program in
@@ -380,6 +393,10 @@ final class RDPSession {
         self.client = nil
         // Joins the RDP thread; it only ever posts to main asynchronously, so this cannot deadlock.
         pstsc_client_free(client)
+        surfacesLock.lock()
+        surfaces.removeAll()
+        removedSurfaces.removeAll()
+        surfacesLock.unlock()
     }
 
     // MARK: Input (desktop coordinates)

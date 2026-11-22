@@ -43,11 +43,13 @@ final class RemoteAppWindow: NSWindow {
     override var canBecomeMain: Bool { !info.isPopup }
 
     func update(_ info: RemoteWindowInfo) {
+        // While the user drags locally, the window frame and the server's frame disagree; keeping
+        // the old info means the surface crop still matches what is on screen.
+        if isLocallyMoving { return }
         self.info = info
         title = info.title
         level = info.isPopup ? .popUpMenu : .normal
         hasShadow = !info.isLayered
-        if isLocallyMoving { return }
         if let reported = reportedFrame {
             if info.frame == reported.frame || Date() > reported.until {
                 reportedFrame = nil
@@ -168,6 +170,8 @@ final class RemoteContentView: NSView, NSTextInputClient {
     /// region is re-composited instead of uploading the whole window to the GPU every frame.
     private var frameImage: CGImage?
     private var redrawWholeView = true
+    /// Crop the current image was built for; a change means the window/surface was resized.
+    private var lastCrop: CGRect = .null
 
     /// RemoteApp windows: the view sits where the remote window is, so map through screen coordinates.
     static let screenMapper: PointMapper = { point, view in
@@ -202,6 +206,10 @@ final class RemoteContentView: NSView, NSTextInputClient {
         guard let image else { return }
         let started = CACurrentMediaTime()
         frameImage = image
+        // A different pixel source (desktop framebuffer vs GFX surface) invalidates everything
+        // painted before; a partial redraw would leave the old source visible around the damage.
+        redrawWholeView = true
+        lastCrop = .null
         needsDisplay = true
         PerfStats.shared.recordShow(CACurrentMediaTime() - started)
     }
@@ -212,21 +220,27 @@ final class RemoteContentView: NSView, NSTextInputClient {
     func showSurface(_ store: FrameStore, crop: CGRect, alpha: Bool) {
         let started = CACurrentMediaTime()
         let dirty = store.takeDirty()
+        let cropChanged = crop != lastCrop
+        // Frames with no new pixels (present, focus changes) must not rebuild or repaint anything.
+        if dirty.isNull && !cropChanged && !redrawWholeView && frameImage != nil { return }
         guard let image = store.image(of: crop, alpha: alpha) else { return }
         frameImage = image
+        lastCrop = crop
 
         let s = DisplayScale.value
         let r = dirty.integral.intersection(crop)
-        if redrawWholeView || r.isEmpty || r.width * r.height >= crop.width * crop.height * 0.5 {
+        // The view may still be at the old size while the server reports a new surface, and
+        // layered windows blend, so a partial repaint is only safe at matching sizes and opaque.
+        let sizeMatches = abs(crop.width / s - bounds.width) < 0.5 && abs(crop.height / s - bounds.height) < 0.5
+        if redrawWholeView || alpha || cropChanged || !sizeMatches || r.isEmpty
+            || r.width * r.height >= crop.width * crop.height * 0.5 {
             redrawWholeView = false
             needsDisplay = true
         } else {
             // Remote pixels count from the top; the view's own coordinates count from the bottom.
             let local = r.offsetBy(dx: -crop.minX, dy: -crop.minY)
-            let width = local.width / s
-            let height = local.height / s
-            setNeedsDisplay(NSRect(x: local.minX / s, y: bounds.height - (local.minY + local.height) / s,
-                                   width: width, height: height))
+            setNeedsDisplay(NSRect(x: local.minX / s, y: crop.height / s - (local.minY + local.height) / s,
+                                   width: local.width / s, height: local.height / s))
         }
         PerfStats.shared.recordShow(CACurrentMediaTime() - started)
     }
@@ -239,6 +253,8 @@ final class RemoteContentView: NSView, NSTextInputClient {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let image = frameImage, let ctx = NSGraphicsContext.current?.cgContext else { return }
+        // Replace pixels instead of blending over them: the old frame is still underneath.
+        ctx.clear(dirtyRect)
         ctx.interpolationQuality = .none
         ctx.draw(image, in: bounds)
         PerfStats.shared.recordPresented()
