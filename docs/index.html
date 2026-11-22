@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kkguai — 把 Windows 程序变成 Mac 原生窗口</title>
+<meta name="description" content="kkguai 是一款免费开源的 macOS RemoteApp 客户端：连接你已有的 Windows 电脑，让每个 Windows 程序变成 Mac 上的原生窗口。不用虚拟机，不用整块远程桌面，也不用买 Parallels。">
+<link rel="canonical" href="https://kkguai666.github.io/kkguai/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="kkguai — 把 Windows 程序变成 Mac 原生窗口">
+<meta property="og:description" content="不用虚拟机，不用整块远程桌面，也不用再买 Parallels。免费开源。">
+<meta property="og:url" content="https://kkguai666.github.io/kkguai/">
+<meta property="og:image" content="https://kkguai666.github.io/kkguai/assets/social.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #09090B;
+    --bg-soft: #0E0F11;
+    --surface: #141518;
+    --surface-2: #191A1E;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --text: #F3F4F6;
+    --muted: #969AA1;
+    --dim: #7B7F87;
+    --blue: #7CB3EF;
+    --blue-deep: #2D6BA8;
+    --silver: #DADCE1;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --w: 1120px;
+    --r: 12px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; overflow-x: clip; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(124, 179, 239, 0.3); }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+  .wrap { width: min(var(--w), calc(100% - 48px)); margin-inline: auto; }
+  .mono { font-family: var(--mono); }
+  .zh-only, .en-only { display: none; }
+  html[data-lang="zh"] .zh-only { display: contents; }
+  html[data-lang="en"] .en-only { display: contents; }
+
+  /* nav */
+  .nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    height: 58px;
+    display: flex; align-items: center;
+    background: rgba(9, 9, 11, 0.72);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-in { display: flex; align-items: center; gap: 28px; width: 100%; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .brand svg { width: 22px; height: 22px; }
+  .nav-links { display: flex; gap: 24px; margin-left: 8px; font-size: 13.5px; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .lang-btn {
+    font: inherit; font-size: 12.5px; color: var(--muted); background: none;
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; cursor: pointer;
+    min-width: 44px; text-align: center;
+  }
+  .lang-btn:hover { color: var(--text); border-color: var(--line-strong); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: inherit; font-size: 14px; font-weight: 500;
+    padding: 9px 16px; border-radius: 999px; border: 1px solid transparent;
+    cursor: pointer; transition: background .18s ease, border-color .18s ease, transform .18s ease;
+  }
+  .btn-primary { background: var(--text); color: #0A0A0B; }
+  .btn-primary:hover { background: #fff; transform: translateY(-1px); }
+  .btn-ghost { border-color: var(--line-strong); color: var(--text); background: rgba(255,255,255,0.02); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+  .btn-small { padding: 7px 14px; font-size: 13px; }
+  .nav .btn { padding: 7px 14px; font-size: 13px; }
+
+  /* hero */
+  .hero { padding: 148px 0 0; position: relative; text-align: center; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; left: 50%; top: -160px; translate: -50% 0;
+    width: 1100px; height: 620px; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(124, 179, 239, 0.13), transparent 72%);
+  }
+  .hero-in { position: relative; }
+  .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--muted); letter-spacing: 0.01em;
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
+    background: rgba(255,255,255,0.015);
+  }
+  .kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 12px var(--blue); }
+  h1 {
+    margin: 26px auto 0; max-width: 900px;
+    font-size: clamp(2.5rem, 6.4vw, 4.5rem); line-height: 1.08; letter-spacing: -0.038em;
+    font-weight: 600;
+  }
+  h1 .os-windows { color: var(--blue); }
+  h1 .os-mac { color: var(--silver); }
+  .lede {
+    margin: 22px auto 0; max-width: 610px;
+    font-size: clamp(1rem, 1.6vw, 1.18rem); line-height: 1.6; color: var(--muted);
+  }
+  .lede strong { color: var(--text); font-weight: 500; }
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+  .btn-lg { padding: 12px 22px; font-size: 15px; }
+  .meta-row {
+    margin-top: 18px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap;
+    font-size: 12.5px; color: var(--dim);
+  }
+  .meta-row span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* stage */
+  .stage-wrap { position: relative; margin-top: 64px; }
+  .stage {
+    position: relative; container-type: inline-size;
+    width: min(1060px, 100%); margin-inline: auto;
+    aspect-ratio: 16 / 9.6;
+    border-radius: 18px;
+    background:
+      radial-gradient(120% 90% at 18% 8%, rgba(124, 179, 239, 0.16), transparent 55%),
+      radial-gradient(90% 80% at 88% 92%, rgba(218, 220, 225, 0.07), transparent 60%),
+      linear-gradient(160deg, #17181C 0%, #0D0E10 62%, #0A0A0C 100%);
+    border: 1px solid var(--line);
+    box-shadow: 0 50px 120px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    isolation: isolate;
+    text-align: left;
+  }
+  .stage::after {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 80%);
+    opacity: .35;
+  }
+  .seam {
+    position: absolute; z-index: 0; left: 50%; top: -10%; bottom: -10%; width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(124,179,239,0.5), rgba(218,220,225,0.35), transparent);
+    opacity: .5;
+  }
+  .win {
+    position: absolute; z-index: 2;
+    background: rgba(22, 23, 27, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    transform-origin: 50% 60%;
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+  .stage.is-ready .win { animation: winIn .9s cubic-bezier(.2,.7,.2,1) backwards; }
+  .stage.is-ready .win-1 { animation-delay: .12s; }
+  .stage.is-ready .win-2 { animation-delay: .26s; }
+  .stage.is-ready .win-3 { animation-delay: .4s; }
+  @keyframes winIn { from { opacity: 0; translate: 0 18px; scale: .98; } to { opacity: 1; translate: 0 0; scale: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .win { opacity: 1; translate: 0; scale: 1; animation: none !important; }
+  }
+  .win-1 { left: 5%; top: 12%; width: 45%; z-index: 3; }
+  .win-2 { right: 3.5%; top: 5.5%; width: 44%; z-index: 2; }
+  .win-3 { right: 17%; bottom: 11%; width: 24%; z-index: 4; }
+  .win-bar {
+    display: flex; align-items: center; gap: 1.1cqw;
+    height: 3.4cqw; padding: 0 1.4cqw;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .lights { display: flex; gap: .62cqw; }
+  .lights i { width: 1.05cqw; height: 1.05cqw; border-radius: 50%; background: #3A3C42; }
+  .lights i:nth-child(1) { background: #EC6A5E; }
+  .lights i:nth-child(2) { background: #F4BF4F; }
+  .lights i:nth-child(3) { background: #61C554; }
+  .win-title {
+    flex: 1; text-align: center; font-size: 1.1cqw; color: #A8ACB4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .win-tools { width: 3.4cqw; }
+  .win-body { padding: 1.6cqw 1.8cqw; font-size: 1.22cqw; line-height: 1.65; color: #C9CCD2; }
+  .win-menu { display: flex; gap: 1.6cqw; font-size: 1.05cqw; color: #83878F; padding-bottom: 1.2cqw; }
+  .note-text { font-family: var(--mono); font-size: 1.08cqw; line-height: 1.9; color: #C6C9CF; white-space: pre-line; }
+  .note-text .b { color: #F1F2F4; }
+  .cursor { display: inline-block; width: 1px; height: 1.15em; background: #7CB3EF; vertical-align: -0.18em; margin-left: .2em; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .ex-wrap { display: flex; height: 15cqw; }
+  .ex-side { width: 31%; border-right: 1px solid rgba(255,255,255,0.07); padding: 1cqw 1.2cqw; font-size: 1cqw; color: #8A8E96; display: flex; flex-direction: column; gap: .9cqw; }
+  .ex-side .grp { color: #63676E; font-size: .88cqw; margin-top: .4cqw; }
+  .ex-main { flex: 1; padding: 1.2cqw; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1cqw; align-content: start; }
+  .file { display: flex; flex-direction: column; align-items: center; gap: .5cqw; font-size: .92cqw; color: #A6AAB2; text-align: center; }
+  .file i { width: 2.6cqw; height: 2.1cqw; border-radius: .35cqw; background: linear-gradient(160deg, #8FBBEA, #5E93C9); }
+  .file.folder i { background: linear-gradient(160deg, #E6C574, #C79B45); }
+  .calc { padding: 1.1cqw 1.2cqw 1.4cqw; }
+  .calc-head { font-size: 1cqw; color: #8A8E96; margin-bottom: .7cqw; }
+  .calc-screen { text-align: right; font-size: 2.6cqw; font-weight: 300; padding: .4cqw .5cqw 1cqw; color: #F1F2F4; }
+  .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5cqw; }
+  .calc-grid b {
+    font-weight: 400; font-size: 1.15cqw; text-align: center; padding: .75cqw 0;
+    background: rgba(255,255,255,0.055); border-radius: .45cqw; color: #D5D8DD;
+  }
+  .calc-grid b.op { background: rgba(124,179,239,0.14); color: #BFD9F5; }
+  .calc-grid b.eq { background: var(--blue); color: #0A0A0B; }
+  .dock {
+    position: absolute; z-index: 6; left: 50%; bottom: 3.4%; translate: -50% 0;
+    display: flex; align-items: flex-end; gap: 1.1cqw;
+    padding: .85cqw 1.1cqw;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 1.5cqw;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+  }
+  .dock i { display: block; width: 3.9cqw; height: 3.9cqw; border-radius: 1cqw; position: relative; }
+  .dock i.app-a { background: linear-gradient(160deg, #6FA8E8, #3A6FA8); }
+  .dock i.app-b { background: linear-gradient(160deg, #ECEDF0, #B9BCC4); }
+  .dock i.app-c { background: linear-gradient(160deg, #7FC08B, #4C8D5B); }
+  .dock i.app-d { background: linear-gradient(160deg, #E9C36F, #BC8F35); }
+  .dock i.app-e { background: linear-gradient(160deg, #B9A6EC, #7C67B8); }
+  .dock i.k { background: #101114; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.16); }
+  .dock i.k svg { width: 68%; height: 68%; }
+  .dock i::after { content: ""; position: absolute; left: 50%; bottom: -.62cqw; translate: -50% 0; width: .38cqw; height: .38cqw; border-radius: 50%; background: rgba(255,255,255,.5); }
+  .dock i:last-child::after { display: none; }
+  .stage-caption { margin-top: 18px; text-align: center; font-size: 12.5px; color: var(--dim); }
+  @media (max-width: 720px) {
+    .stage { aspect-ratio: 4 / 3.6; border-radius: 14px; }
+    .win-1 { left: 4%; top: 8%; width: 62%; }
+    .win-2 { right: 4%; top: 34%; width: 60%; }
+    .win-3 { display: none; }
+    .win-bar { height: 22px; padding: 0 8px; gap: 6px; }
+    .lights { gap: 4px; } .lights i { width: 6px; height: 6px; }
+    .win-title { font-size: 7px; } .win-tools { width: 18px; }
+    .win-body { padding: 9px 10px; font-size: 7px; }
+    .win-menu { font-size: 6.5px; gap: 10px; padding-bottom: 6px; }
+    .note-text { font-size: 6.6px; line-height: 1.8; }
+    .ex-wrap { height: 92px; } .ex-side { font-size: 6px; gap: 5px; padding: 6px; }
+    .ex-main { gap: 6px; padding: 7px; } .file { font-size: 6px; gap: 3px; }
+    .file i { width: 15px; height: 12px; } .dock { gap: 7px; padding: 6px 8px; border-radius: 10px; bottom: 5%; }
+    .dock i { width: 26px; height: 26px; border-radius: 7px; }
+  }
+
+  /* sections */
+  section { padding: 120px 0 0; }
+  .sec-head { max-width: 720px; }
+  .sec-head h2 {
+    margin: 0; font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.14;
+    letter-spacing: -0.03em; font-weight: 600;
+  }
+  .sec-head p { margin: 16px 0 0; font-size: 16px; line-height: 1.65; color: var(--muted); max-width: 620px; }
+
+  /* split diagrams */
+  .split { margin-top: 54px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .diagram {
+    border: 1px solid var(--line); border-radius: 14px; padding: 26px;
+    background: var(--bg-soft);
+  }
+  .diagram-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  .diagram-label b { font-size: 14.5px; font-weight: 500; }
+  .diagram-label span { font-size: 12px; color: var(--dim); }
+  .desk { position: relative; aspect-ratio: 16 / 9.4; border-radius: 9px; border: 1px solid var(--line); background: #0B0C0E; overflow: hidden; }
+  .desk { background: #0D0E11; }
+  .desk.other .big-window { position: absolute; inset: 9% 7%; border-radius: 6px; border: 1px solid rgba(255,255,255,.18); background: #1A1C21; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+  .desk.other .big-window .tinybar { height: 18%; background: #24262C; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .desk.other .big-window .tinygrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 7px; opacity: .8; }
+  .desk.other .big-window .tinygrid i { height: 9px; border-radius: 2px; background: #363A43; }
+  .desk.other .taskbar { position: absolute; left: 9%; right: 9%; bottom: 11%; height: 17px; background: #22252B; border-top: 1px solid rgba(255,255,255,.1); display: flex; gap: 4px; align-items: center; padding: 0 5px; }
+  .desk.other .taskbar i { width: 9px; height: 9px; border-radius: 2px; background: #464B55; }
+  .desk.other .lock { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(9,9,11,.35); }
+  .desk.other .lock span { font-size: 11px; color: #B4B8BF; border: 1px solid rgba(255,255,255,.16); padding: 5px 10px; border-radius: 999px; background: rgba(9,9,11,.65); }
+  .desk.kkg { background: radial-gradient(80% 80% at 50% 40%, #131519, #0A0B0D); }
+  .mini-win { position: absolute; border-radius: 5px; border: 1px solid rgba(255,255,255,.2); background: #1B1D22; box-shadow: 0 10px 24px rgba(0,0,0,.5); overflow: hidden; }
+  .mini-win .mb { height: 8px; background: rgba(255,255,255,.1); border-bottom: 1px solid rgba(255,255,255,.08); }
+  .mini-win .mc { padding: 7px; display: flex; flex-direction: column; gap: 4px; }
+  .mini-win .mc i { height: 4px; border-radius: 2px; background: #3D424B; width: 72%; }
+  .mini-win .mc i:nth-child(2) { width: 54%; } .mini-win .mc i:nth-child(3) { width: 64%; }
+  .mw1 { left: 7%; top: 13%; width: 41%; height: 48%; }
+  .mw2 { right: 7%; top: 21%; width: 41%; height: 48%; }
+  .mw3 { left: 30%; bottom: 8%; width: 41%; height: 44%; }
+  .desk.kkg .dock-mini { position: absolute; left: 50%; bottom: 12px; translate: -50% 0; display: flex; gap: 4px; padding: 3px 5px; border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
+  .desk.kkg .dock-mini i { width: 10px; height: 10px; border-radius: 3px; background: #434852; }
+
+  /* feature grid */
+  .features { margin-top: 54px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .feat { padding: 30px 28px 34px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .feat svg { width: 22px; height: 22px; stroke: var(--blue); }
+  .feat h3 { margin: 18px 0 8px; font-size: 15.5px; font-weight: 550; letter-spacing: -0.01em; }
+  .feat p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--muted); }
+
+  /* comparison */
+  .table-wrap { margin-top: 48px; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-soft); }
+  table { width: 100%; border-collapse: collapse; min-width: 780px; font-size: 14px; }
+  caption { text-align: left; padding: 18px 22px; font-size: 12.5px; color: var(--dim); border-bottom: 1px solid var(--line); }
+  th, td { padding: 15px 18px; text-align: left; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  thead th { font-size: 12.5px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,.02); vertical-align: bottom; }
+  thead th.us { color: var(--text); background: rgba(124,179,239,.07); }
+  thead th .tagline { display: block; font-weight: 400; font-size: 11.5px; color: var(--dim); margin-top: 3px; }
+  thead th.us .tagline { color: var(--blue); }
+  td.us { background: rgba(124,179,239,.05); color: var(--text); }
+  tbody th { font-weight: 400; color: var(--muted); }
+  .yes { color: var(--blue); }
+  .no { color: var(--dim); font-size: 15px; }
+  .na { color: var(--dim); }
+  .price { font-variant-numeric: tabular-nums; }
+
+  /* steps */
+  .steps { margin-top: 54px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+  .step { border-top: 1px solid var(--line-strong); padding-top: 18px; position: relative; }
+  .step::before { counter-increment: step; content: "0" counter(step); position: absolute; right: 0; top: -14px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .step h3 { margin: 12px 0 8px; font-size: 16px; font-weight: 550; letter-spacing: -0.01em; }
+  .step p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--muted); }
+  .step code { font-family: var(--mono); font-size: 12.5px; color: var(--silver); background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 4px; }
+  .code-card { margin-top: 34px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #0C0D0F; }
+  .code-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+  .code-head .file-name { font-family: var(--mono); color: var(--muted); }
+  .copy-btn { margin-left: auto; font: inherit; font-size: 11.5px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; }
+  .copy-btn:hover { color: var(--text); border-color: var(--line-strong); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.75; color: #C9CCD2; }
+  pre .c { color: #80858D; }
+  pre .p { color: #7CB3EF; }
+
+  /* faq */
+  .faq { margin-top: 30px; border-top: 1px solid var(--line); }
+  details { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 16px; padding: 22px 2px; font-size: 15.5px; font-weight: 500; }
+  summary::-webkit-details-marker { display: none; }
+  summary .plus { margin-left: auto; color: var(--dim); font-weight: 300; font-size: 20px; line-height: 1; transition: rotate .2s ease; }
+  details[open] summary .plus { rotate: 45deg; }
+  details .answer { padding: 0 2px 24px; font-size: 14.5px; line-height: 1.7; color: var(--muted); max-width: 780px; }
+
+  /* final cta */
+  .final { margin-top: 120px; border-top: 1px solid var(--line); padding: 90px 0 40px; text-align: center; }
+  .final h2 { margin: 0 auto; max-width: 680px; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.15; letter-spacing: -0.03em; font-weight: 600; }
+  .final p { margin: 16px auto 0; color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 560px; }
+  footer { margin-top: 70px; border-top: 1px solid var(--line); padding: 26px 0 40px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; font-size: 12.5px; color: var(--dim); }
+  .foot .spacer { flex: 1; }
+  .foot a:hover { color: var(--text); }
+  .foot .brand { font-size: 14px; color: var(--muted); }
+  .foot .brand svg { width: 18px; height: 18px; }
+
+  @media (max-width: 900px) {
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .split { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; gap: 28px; }
+    .step::before { position: static; display: block; margin-bottom: 8px; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 640px) {
+    .wrap { width: min(var(--w), calc(100% - 32px)); }
+    .hero { padding-top: 120px; }
+    .features { grid-template-columns: 1fr; }
+    .meta-row { gap: 8px 14px; }
+    section { padding-top: 88px; }
+    .final { margin-top: 88px; padding-top: 64px; }
+  }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="kkguai">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+      kkguai
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#why" data-en="Why">为什么</a>
+      <a href="#compare" data-en="Compare">对比</a>
+      <a href="#start" data-en="Get started">开始</a>
+      <a href="#faq" data-en="FAQ">常见问题</a>
+      <a href="https://github.com/kkguai666/kkguai">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <button class="lang-btn" id="lang" type="button" aria-label="Switch language">EN</button>
+      <a class="btn btn-primary" href="https://github.com/kkguai666/kkguai/releases/latest" data-en="Download">下载</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" aria-labelledby="h1">
+    <div class="wrap hero-in">
+      <span class="kicker"><span class="dot"></span><span data-en="Free &amp; open source · macOS 14+ · Apple Silicon">免费开源 · macOS 14+ · Apple Silicon</span></span>
+      <h1 id="h1">
+        <span class="zh-only">把 <span class="os-windows">Windows</span> 程序，<br>变成 <span class="os-mac">Mac</span> 原生窗口。</span>
+        <span class="en-only">Run <span class="os-windows">Windows</span> apps<br>as <span class="os-mac">native Mac</span> windows.</span>
+      </h1>
+      <p class="lede">
+        <span class="zh-only">不用虚拟机，不用整块远程桌面，也不用再买 Parallels。<br>你已有的那台 Windows 电脑，就是 Mac 的第二块应用区。</span>
+        <span class="en-only">No virtual machine. No full-screen remote desktop. No second Parallels licence.<br>The Windows PC you already own becomes a second app space for your Mac.</span>
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/kkguai666/kkguai/releases/latest" data-en="Download for macOS">下载 kkguai</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/kkguai666/kkguai" data-en="View on GitHub">在 GitHub 上看</a>
+      </div>
+      <div class="meta-row">
+        <span data-en="Free · MIT">免费 · MIT</span>
+        <span data-en="One window per app">一个程序一个窗口</span>
+        <span data-en="Retina · Chinese IME · Remote cursor">Retina · 中文输入法 · 远端光标</span>
+      </div>
+    </div>
+
+    <div class="wrap stage-wrap">
+      <div class="stage" id="stage" role="img" aria-label="Mac 桌面上并排显示三个 Windows 程序窗口，底部 Dock 中有每个程序的图标">
+        <span class="seam" aria-hidden="true"></span>
+
+        <div class="win win-1">
+          <div class="win-bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span class="win-title">未命名 — 记事本</span>
+            <span class="win-tools"></span>
+          </div>
+          <div class="win-body">
+            <div class="win-menu"><span>文件</span><span>编辑</span><span>查看</span></div>
+            <div class="note-text"><span class="b">kkguai</span> 把 Windows 程序<br>变成 Mac 原生窗口。<br><br>每个程序一个窗口，<br>一个 Dock 图标。<br><br>不用虚拟机，<br>也不用整块远程桌面。<span class="cursor"></span></div>
+          </div>
+        </div>
+
+        <div class="win win-2">
+          <div class="win-bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span class="win-title">此电脑</span>
+            <span class="win-tools"></span>
+          </div>
+          <div class="ex-wrap">
+            <div class="ex-side">
+              <span>快速访问</span>
+              <span>桌面</span><span>下载</span><span>文档</span><span>图片</span>
+              <span class="grp">此电脑</span>
+              <span>Windows (C:)</span><span>数据 (D:)</span>
+            </div>
+            <div class="ex-main">
+              <span class="file folder"><i></i>项目</span>
+              <span class="file folder"><i></i>发票</span>
+              <span class="file folder"><i></i>备份</span>
+              <span class="file"><i></i>报表.xlsx</span>
+              <span class="file"><i></i>合同.docx</span>
+              <span class="file"><i></i>说明.txt</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="win win-3">
+          <div class="win-bar">
+            <span class="lights"><i></i><i></i><i></i></span>
+            <span class="win-title">计算器</span>
+            <span class="win-tools"></span>
+          </div>
+          <div class="calc">
+            <div class="calc-head">标准</div>
+            <div class="calc-screen">1,024</div>
+            <div class="calc-grid">
+              <b>%</b><b>CE</b><b>C</b><b class="op">⌫</b>
+              <b>7</b><b>8</b><b>9</b><b class="op">÷</b>
+              <b>4</b><b>5</b><b>6</b><b class="op">×</b>
+              <b>1</b><b>2</b><b>3</b><b class="op">−</b>
+              <b>±</b><b>0</b><b>.</b><b class="op">+</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="dock" aria-hidden="true">
+          <i class="app-a"></i>
+          <i class="k"><svg viewBox="0 0 64 64"><rect x="6" y="12" width="38" height="29" rx="7" fill="none" stroke="#7CB3EF" stroke-width="4"/><rect x="20" y="23" width="38" height="29" rx="7" fill="#101114" stroke="#DADCE1" stroke-width="4"/></svg></i>
+          <i class="app-b"></i>
+          <i class="app-c"></i>
+          <i class="app-d"></i>
+        </div>
+      </div>
+      <p class="stage-caption" data-en="A concept view: Windows app windows, Mac window controls, one Dock icon each. Real screenshots coming from the community.">示意图：Windows 程序的内容，Mac 的窗口控件，每个程序一个 Dock 图标。</p>
+    </div>
+  </section>
+
+  <section id="why" aria-labelledby="why-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="why-h" data-en="Not another remote desktop.">不再是一块「远程桌面」。</h2>
+        <p data-en="Remote desktop tools squeeze an entire Windows screen into one Mac window. kkguai does the opposite: it asks Windows for a single app, and gives that app its own native Mac window. Drag it, resize it, put it next to Mail — it behaves like any other app.">远程桌面工具会把一整块 Windows 屏幕塞进一个窗口；kkguai 反过来做：只向 Windows 要那一个程序，然后给它一个真正的 Mac 窗口。拖动、缩放、和邮件窗口并排，手感和本地应用一样。</p>
+      </div>
+
+      <div class="split">
+        <div class="diagram">
+          <div class="diagram-label"><b data-en="Full-desktop streaming">整块桌面串流</b><span data-en="Microsoft Remote Desktop, VNC">微软远程桌面、VNC</span></div>
+          <div class="desk other">
+            <div class="big-window">
+              <div class="tinybar"></div>
+              <div class="tinygrid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="taskbar"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="lock"><span data-en="One big window · a desktop inside a desktop">一个大窗口 · 桌面套桌面</span></div>
+          </div>
+        </div>
+        <div class="diagram">
+          <div class="diagram-label"><b>kkguai</b><span data-en="One native window per app">每个程序一个原生窗口</span></div>
+          <div class="desk kkg">
+            <div class="mini-win mw1"><div class="mb"></div><div class="mc"><i></i><i></i><i></i></div></div>
+            <div class="mini-win mw2"><div class="mb"></div><div class="mc"><i></i><i></i><i></i></div></div>
+            <div class="mini-win mw3"><div class="mb"></div><div class="mc"><i></i><i></i><i></i></div></div>
+            <div class="dock-mini"><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="feat-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="feat-h" data-en="The details that make it feel local.">让它「像本地应用」的那些细节。</h2>
+        <p data-en="RemoteApp itself is old technology. What makes kkguai usable every day is the work done on the Mac side.">RemoteApp 本身不是新技术。kkguai 花力气的地方，是让它在 Mac 上每天都能顺手用。</p>
+      </div>
+      <div class="features">
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M9 9h6v6H9z"/></svg>
+          <h3 data-en="Retina, negotiated properly">Retina 是真的 2 倍</h3>
+          <p data-en="The session is negotiated at 200% and rendered at 2× pixels, with 1/2-point coordinate mapping. Text stays sharp next to native Mac UI.">会话按 200% 协商、按 2 倍像素渲染，坐标做 1/2 点映射。文字放在 Mac 原生界面旁边也不发虚。</p>
+        </div>
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M7 9h5M7 12h4M7 15h3"/><path d="M15 9h3v6h-3z"/></svg>
+          <h3 data-en="Your Mac input method">用 Mac 输入法打中文</h3>
+          <p data-en="Pinyin is composed on the Mac, the candidate window appears on the Mac, and finished characters are sent as Unicode — no double composition, no lost characters.">拼音在 Mac 上合成，候选框在 Mac 上弹出，选好的字以 Unicode 发过去。不会远端再合成一遍，也不会丢字。</p>
+        </div>
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l6.5 16 1.8-6.2L19.5 11z"/><path d="M13 13l5 5"/></svg>
+          <h3 data-en="Cursors that tell the truth">光标跟着程序变</h3>
+          <p data-en="Text, links, resize edges: the cursor shape and its hotspot follow the Windows side, so a click lands where the cursor says it will.">文本、链接、窗口边缘，光标形状和热点都来自 Windows。看到的光标在哪，点下去就在哪。</p>
+        </div>
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16M4 16h16M8 4v16M16 4v16"/></svg>
+          <h3 data-en="Dragging done locally">拖动在本地完成</h3>
+          <p data-en="Move and resize happen on the Mac immediately; the new geometry is reported to the server when you let go. It doesn't lag behind your hand.">移动和缩放先在 Mac 本地完成，松手后才把新位置告诉远端。窗口不会拖在你手后面。</p>
+        </div>
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+          <h3 data-en="One Dock icon per app">每个程序自己进 Dock</h3>
+          <p data-en="Remote apps get their own Dock icon, so Spotlight, Launchpad and ⌘Tab treat them like anything else on your Mac. Windows 11-style Start menu included.">远端程序有自己的 Dock 图标，Spotlight、Launchpad、⌘Tab 里都能找到。还带一个 Windows 11 风格的开始菜单。</p>
+        </div>
+        <div class="feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="9" rx="1.5"/><rect x="9" y="11" width="13" height="9" rx="1.5"/><path d="M5 17h3"/></svg>
+          <h3 data-en="Multi-monitor aware">多显示器不用重配</h3>
+          <p data-en="Your Mac display layout is mirrored to the remote session, so windows can be dragged across screens the way you expect.">Mac 的显示器布局会同步给远端会话，窗口可以跨屏拖动，不用每次重新摆一遍。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare" aria-labelledby="cmp-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="cmp-h" data-en="The honest comparison.">和常见方案比一比。</h2>
+        <p data-en="Parallels gives you a Windows machine inside your Mac. kkguai assumes you already have one — and turns its apps into Mac windows for free.">Parallels 是在 Mac 里再造一台 Windows；kkguai 假设你已经有一台，只是免费把它的程序变成 Mac 窗口。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <caption data-en="As of November 2026. Parallels Desktop requires a Windows licence on top of its own subscription; a Windows Pro licence is required to host RDP.">截至 2026 年 11 月。Parallels Desktop 的价格不含 Windows 授权；作为 RDP 主机需要 Windows 专业版。</caption>
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" class="us">kkguai<span class="tagline" data-en="Free · open source">免费 · 开源</span></th>
+              <th scope="col">Parallels Desktop<span class="tagline" data-en="Coherence mode">Coherence 模式</span></th>
+              <th scope="col" data-en="Microsoft Windows App">微软 Windows App</th>
+              <th scope="col">UTM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" data-en="One native window per app">每个程序一个原生窗口</th><td class="us"><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="no">✗</span> <span data-en="only full desktop">只有整块桌面</span></td><td><span class="no">✗</span></td></tr>
+            <tr><th scope="row" data-en="Virtual machine required">需要虚拟机</th><td class="us"><span class="yes" data-en="No">不用</span></td><td data-en="Yes">需要</td><td data-en="No">不用</td><td data-en="Yes">需要</td></tr>
+            <tr><th scope="row" data-en="Needs a Windows licence">需要 Windows 授权</th><td class="us" data-en="Your existing PC">用你已有的那台</td><td data-en="Yes">需要</td><td data-en="Yes, Pro for hosting">需要（专业版）</td><td data-en="Yes">需要</td></tr>
+            <tr><th scope="row" data-en="Retina rendering">Retina 清晰渲染</th><td class="us"><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+            <tr><th scope="row" data-en="Chinese input method">中文输入法</th><td class="us"><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+            <tr><th scope="row" data-en="Price">价格</th><td class="us price" data-en="Free">免费</td><td class="price" data-en="From $99/year">$99/年起</td><td class="price" data-en="Free">免费</td><td class="price" data-en="Free">免费</td></tr>
+            <tr><th scope="row" data-en="Open source">开源</th><td class="us"><span class="yes" data-en="MIT">MIT</span></td><td><span class="no">✗</span></td><td><span class="no">✗</span></td><td><span class="yes" data-en="Apache-2.0">Apache-2.0</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="start" aria-labelledby="start-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="start-h" data-en="Three steps. About five minutes.">三步，大约五分钟。</h2>
+        <p data-en="You need a Windows 10 or 11 Pro PC that stays on, and a network path between the two machines — LAN, VPN or Tailscale all work.">需要一台开着的 Windows 10 / 11 专业版电脑，以及两台机器之间网络可达：局域网、VPN、Tailscale 都行。</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3 data-en="Turn on Remote Desktop on Windows">在 Windows 上打开远程桌面</h3>
+          <p data-en="Run these two lines in an administrator PowerShell. Windows 10 Home cannot host RDP.">在管理员 PowerShell 里运行下面两行。<code>Windows 家庭版不能做 RDP 主机</code>。</p>
+        </div>
+        <div class="step">
+          <h3 data-en="Install kkguai on the Mac">在 Mac 上装 kkguai</h3>
+          <p data-en="Download the .dmg, drag kkguai into Applications, and open it. Because the build is not notarized yet, run the xattr line once.">下载 .dmg，把 kkguai 拖进「应用程序」。发布包还没做 Apple 公证，首次打开前执行一次 xattr 那一行。</p>
+        </div>
+        <div class="step">
+          <h3 data-en="Connect and pick an app">连接，挑一个程序</h3>
+          <p data-en="Enter the Windows PC's address and account, then open apps from the Start menu. Each one gets its own Mac window and Dock icon.">填 Windows 电脑的地址和账号，从开始菜单里打开程序。每个程序都会有自己的 Mac 窗口和 Dock 图标。</p>
+        </div>
+      </div>
+
+      <div class="code-card">
+        <div class="code-head"><span class="file-name" data-en="Windows · Administrator PowerShell">Windows · 管理员 PowerShell</span>
+          <button class="copy-btn" type="button" data-copy="code-win" data-en="Copy">复制</button>
+        </div>
+        <pre id="code-win"><span class="c"># 允许远程桌面，并放行防火墙（语言无关的规则组 ID）</span>
+<span class="p">Set-ItemProperty</span> 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+<span class="p">Enable-NetFirewallRule</span> -Group '@FirewallAPI.dll,-28752'</pre>
+      </div>
+
+      <div class="code-card">
+        <div class="code-head"><span class="file-name">macOS · Terminal</span>
+          <button class="copy-btn" type="button" data-copy="code-mac" data-en="Copy">复制</button>
+        </div>
+        <pre id="code-mac"><span class="c"># 首次打开前去掉隔离标记（只需一次）</span>
+<span class="p">xattr</span> -dr com.apple.quarantine /Applications/kkguai.app
+<span class="p">open</span> /Applications/kkguai.app</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="faq-h" data-en="Questions, answered.">常见问题。</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary><span data-en="Which Windows version do I need?">需要什么版本的 Windows？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="A Windows 10 or 11 Pro (or Enterprise) PC with Remote Desktop enabled. Windows Home cannot host an RDP session.">Windows 10 / 11 专业版（或企业版），并开启远程桌面。家庭版不能作为 RDP 主机。</div>
+        </details>
+        <details>
+          <summary><span data-en="Does the Windows PC have to stay on?">Windows 电脑要一直开着吗？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="Yes. The apps run on that machine; kkguai only displays their windows and sends your input. If it sleeps or disconnects, the windows disappear.">要。程序本身运行在那台机器上，kkguai 只负责显示窗口和发送输入。那台电脑休眠或断网，窗口就会消失。</div>
+        </details>
+        <details>
+          <summary><span data-en="Can I use it outside my LAN?">不在同一个局域网能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="Yes. VPN, Tailscale or a port forward all work. We strongly recommend VPN or Tailscale instead of exposing port 3389 directly to the internet.">能。VPN、Tailscale、端口转发都可以。建议用 VPN 或 Tailscale，不要把 3389 直接暴露在公网。</div>
+        </details>
+        <details>
+          <summary><span data-en="Why the xattr command on first launch?">为什么首次打开要执行 xattr？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="The release is ad-hoc signed but not notarized by Apple, so macOS quarantines it after download. Removing the quarantine flag takes one command, once per install.">发布包是 ad-hoc 签名，还没经过 Apple 公证，所以下载后 macOS 会隔离它。去掉隔离标记只需要一条命令，每次安装做一次。</div>
+        </details>
+        <details>
+          <summary><span data-en="How is this different from Parallels?">和 Parallels 有什么区别？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="Parallels runs a whole Windows virtual machine on your Mac and needs its own subscription plus a Windows licence. kkguai uses a Windows PC you already have, so it costs nothing and doesn't take RAM or CPU from the Mac. The trade-off: that PC must be reachable.">Parallels 在 Mac 里跑一整台 Windows 虚拟机，要买它的订阅，还要 Windows 授权；kkguai 用你已有的 Windows 电脑，不花钱，也不占 Mac 的内存和 CPU。代价是那台电脑必须在线、网络可达。</div>
+        </details>
+        <details>
+          <summary><span data-en="Does it work on Intel Macs?">Intel Mac 能用吗？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="The current release is Apple Silicon only. Intel Macs can build from source — see the repository's build section.">当前发布包只支持 Apple Silicon。Intel Mac 可以从源码构建，步骤见仓库的构建说明。</div>
+        </details>
+        <details>
+          <summary><span data-en="Is it secure?">安全吗？</span><span class="plus">+</span></summary>
+          <div class="answer" data-en="The connection is standard RDP and is encrypted in transit. Keep it on your LAN, a VPN or Tailscale, use a real account password, and don't expose RDP to the open internet.">连接走标准 RDP，传输加密。把它放在局域网、VPN 或 Tailscale 里，给 Windows 账号设一个真实密码，不要把 RDP 直接暴露到公网。</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2 data-en="Your Windows PC is already the second Mac you needed.">你已有的 Windows 电脑，就是 Mac 缺的那一半。</h2>
+      <p data-en="Free, MIT-licensed, and small enough to read. If it saves you a Parallels subscription, a star is the best way to say thanks.">免费、MIT 开源，小到可以读完。如果它帮你省下了一个 Parallels 订阅，给个 star 就是最好的回报。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/kkguai666/kkguai/releases/latest" data-en="Download kkguai">下载 kkguai</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/kkguai666/kkguai" data-en="Star on GitHub">GitHub 点 star</a>
+      </div>
+    </div>
+    <footer>
+      <div class="wrap foot">
+        <a class="brand" href="#top">
+          <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="5" y="11" width="39" height="30" rx="7" fill="none" stroke="#7CB3EF" stroke-width="3.5"/><rect x="20" y="23" width="39" height="30" rx="7" fill="#0A0A0B" stroke="#DADCE1" stroke-width="3.5"/><path d="M28 33h10M28 39h16" stroke="#DADCE1" stroke-width="3" stroke-linecap="round"/></svg>
+          kkguai
+        </a>
+        <span data-en="MIT licensed · built on Pstsc">MIT 许可 · 基于 Pstsc</span>
+        <span class="spacer"></span>
+        <a href="https://github.com/kkguai666/kkguai" data-en="Repository">代码仓库</a>
+        <a href="https://github.com/kkguai666/kkguai/releases" data-en="Releases">版本发布</a>
+        <a href="https://github.com/kkguai666/kkguai/issues" data-en="Issues">问题反馈</a>
+      </div>
+    </footer>
+  </section>
+</main>
+
+<script>
+  (function () {
+    var stage = document.getElementById('stage');
+    if (stage) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        stage.classList.add('is-ready');
+      } else {
+        requestAnimationFrame(function () { stage.classList.add('is-ready'); });
+      }
+    }
+
+    var root = document.documentElement;
+    var btn = document.getElementById('lang');
+    var stored = null;
+    try { stored = localStorage.getItem('kkguai-lang'); } catch (e) {}
+    var initial = stored || ((navigator.language || '').toLowerCase().indexOf('en') === 0 ? 'en' : 'zh');
+
+    function applyLang(lang) {
+      root.dataset.lang = lang;
+      root.lang = lang === 'en' ? 'en' : 'zh-CN';
+      document.querySelectorAll('[data-en]').forEach(function (el) {
+        if (!el.dataset.zh) el.dataset.zh = el.textContent;
+        el.textContent = lang === 'en' ? el.dataset.en : el.dataset.zh;
+      });
+      btn.textContent = lang === 'en' ? '中文' : 'EN';
+      btn.setAttribute('aria-label', lang === 'en' ? '切换到中文' : 'Switch to English');
+      try { localStorage.setItem('kkguai-lang', lang); } catch (e) {}
+    }
+
+    applyLang(initial);
+    btn.addEventListener('click', function () {
+      applyLang(root.dataset.lang === 'en' ? 'zh' : 'en');
+    });
+
+    document.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var code = document.getElementById(b.dataset.copy);
+        if (!code) return;
+        var text = code.innerText;
+        var done = function () {
+          var old = b.dataset.en || b.textContent;
+          b.textContent = root.dataset.lang === 'en' ? 'Copied' : '已复制';
+          setTimeout(function () {
+            b.textContent = root.dataset.lang === 'en' ? (b.dataset.en || 'Copy') : '复制';
+          }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, done);
+        } else {
+          done();
+        }
+      });
+    });
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && stage) {
+      var wins = stage.querySelectorAll('.win');
+      stage.addEventListener('pointermove', function (e) {
+        var r = stage.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width - 0.5;
+        var y = (e.clientY - r.top) / r.height - 0.5;
+        wins.forEach(function (w, i) {
+          var depth = (i + 1) * 2.2;
+          w.style.transform = 'translate3d(' + (-x * depth).toFixed(2) + 'px,' + (-y * depth * 0.7).toFixed(2) + 'px,0)';
+        });
+      });
+      stage.addEventListener('pointerleave', function () {
+        wins.forEach(function (w) { w.style.transform = ''; });
+      });
+    }
+  })();
+</script>
+</body>
+</html>
