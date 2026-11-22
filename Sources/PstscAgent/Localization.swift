@@ -80,6 +80,7 @@ private enum Translations {
         "원격 PC 리소스 사용량": ("Remote PC Resource Usage", "リモート PC のリソース使用量"),
         // Feedback window
         "피드백 보내기…": ("Send Feedback…", "フィードバックを送る…"),
+        "업데이트 확인…": ("Check for Updates…", "アップデートを確認…"),
         "kkguai — 피드백 보내기": ("kkguai — Send Feedback", "kkguai — フィードバック"),
         "불편한 점이나 원하는 기능을 알려 주세요. 모든 메시지를 읽습니다.":
             ("Tell us what is broken or what you want. Every message is read.",

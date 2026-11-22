@@ -733,6 +733,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         appMenu.addItem(withTitle: L("원격 PC 리소스 사용량…"), action: #selector(showRemoteResources), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("피드백 보내기…"), action: #selector(showFeedback), keyEquivalent: "")
+        appMenu.addItem(withTitle: L("업데이트 확인…"), action: #selector(checkForUpdates), keyEquivalent: "")
         updateToggleItems()
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: L("연결 끊기"), action: #selector(disconnect), keyEquivalent: "")
@@ -807,6 +808,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         feedbackWindow.showWindow(nil)
         feedbackWindow.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// Opens the releases page in the default browser; the page itself shows whether a newer
+    /// version exists, so the app never needs to call the GitHub API.
+    @objc private func checkForUpdates() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/kkguai666/kkguai/releases/latest")!)
     }
 
     /// Runs the fixed resources.ps1 on the remote PC and logs (and optionally shows) its report.
