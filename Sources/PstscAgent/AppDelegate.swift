@@ -62,6 +62,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     /// ⌥Space opens the remote Start menu from any app; ⌥` cycles the open remote windows.
     private var launcherHotKey: GlobalHotKey?
     private var windowCycleHotKey: GlobalHotKey?
+    /// Reachability of the remote PC, shown in the menu bar; drives instant recovery after a drop.
+    private let watchdog = ConnectionWatchdog()
+    private lazy var statusItem = StatusItemController()
 
     private enum Pref {
         static let shareHome = "shareHomeFolder"
@@ -112,6 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         startMenu.onPower = { [weak self] action in self?.perform(action) }
         setUpProgramDock()
         setUpHotKeys()
+        setUpStatusItem()
         setUpNotifications()
 
         // Launchpad/Spotlight launchers ask a running Pstsc to start an app.
@@ -194,6 +198,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         manager.bringToFront(next)
     }
 
+    // MARK: Menu bar status
+
+    private func setUpStatusItem() {
+        statusItem.menuBuilder = { [weak self] in self?.statusMenu() ?? NSMenu() }
+        watchdog.onChange = { [weak self] state in
+            guard let self else { return }
+            self.statusItem.update(state: state, connected: self.ready)
+        }
+        watchdog.onRecovered = { [weak self] in self?.recoverImmediately() }
+    }
+
+    private func refreshStatusItem() {
+        statusItem.update(state: watchdog.state, connected: ready)
+    }
+
+    private func statusMenu() -> NSMenu {
+        let menu = NSMenu()
+        let header = NSMenuItem(title: statusText(), action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        menu.addItem(header)
+        menu.addItem(.separator())
+        let start = menu.addItem(withTitle: L("시작 메뉴 열기 (⌥Space)"),
+                                 action: #selector(showLauncher), keyEquivalent: "")
+        start.target = self
+        let retry = menu.addItem(withTitle: L("지금 다시 연결"), action: #selector(reconnectNow), keyEquivalent: "")
+        retry.target = self
+        retry.isEnabled = credentials != nil
+        let cut = menu.addItem(withTitle: L("연결 끊기"), action: #selector(disconnect), keyEquivalent: "")
+        cut.target = self
+        cut.isEnabled = session != nil || reconnectWork != nil
+        menu.addItem(.separator())
+        let open = menu.addItem(withTitle: L("kkguai 열기"), action: #selector(showConnectWindow), keyEquivalent: "")
+        open.target = self
+        let quit = menu.addItem(withTitle: L("kkguai 종료"), action: #selector(NSApplication.terminate(_:)),
+                                keyEquivalent: "q")
+        quit.target = NSApp
+        return menu
+    }
+
+    private func statusText() -> String {
+        switch watchdog.state {
+        case .reachable(let ms):
+            return ready ? L("연결됨 · %d ms", ms) : L("원격 PC 도달 가능 · %d ms", ms)
+        case .checking:
+            return L("원격 PC 확인 중…")
+        case .unreachable:
+            return L("원격 PC에 연결할 수 없습니다")
+        case .idle:
+            return credentials == nil ? L("연결되지 않음") : L("대기 중")
+        }
+    }
+
+    /// The PC answers again while a reconnect is pending: skip the remaining backoff.
+    private func recoverImmediately() {
+        guard session == nil, reconnectWork != nil, credentials != nil, hasBeenReady,
+              !userEndedRemoteSession else { return }
+        FileHandle.standardError.write(Data("[pstsc] remote PC is back, reconnecting now\n".utf8))
+        stopReconnecting()
+        connect(mode: mode, resuming: true)
+    }
+
     // MARK: Notifications
 
     private func setUpNotifications() {
@@ -274,6 +339,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        watchdog.stop()
         session?.disconnect()
         programs.reset()
     }
@@ -398,6 +464,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     private func connect(mode newMode: Mode, resuming: Bool = false) {
         guard let credentials, let screen = NSScreen.screens.first else { return }
+        watchdog.start(host: credentials.host)
         tearDownSession()
         // Switch the Start menu to this PC: show its cached apps (or none), never the last PC's.
         // A reconnect keeps the loading percent; a new attempt starts it over.
@@ -578,6 +645,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         guard session === self.session else { return }
         ready = true
         hasBeenReady = true
+        refreshStatusItem()
         readyAt = Date()
         stopReconnecting()
         if rememberOnSuccess, let credentials {
@@ -1030,8 +1098,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         }
     }
 
+    @objc private func reconnectNow() {
+        guard let credentials else { return }
+        FileHandle.standardError.write(Data("[pstsc] manual reconnect to \(credentials.host)\n".utf8))
+        stopReconnecting()
+        tearDownSession()
+        connect(mode: mode, resuming: hasBeenReady)
+    }
+
     @objc private func disconnect() {
         let wasReconnecting = reconnectWork != nil
+        watchdog.stop()
         stopReconnecting()
         guard session != nil || wasReconnecting else { return }
         tearDownSession()

@@ -229,6 +229,18 @@ private enum Translations {
 
         // Per-program Dock icons
         "Windows 앱": ("Windows App", "Windows アプリ"),
+
+        // Menu bar status and watchdog
+        "원격 PC 연결됨 · %d ms": ("Remote PC connected · %d ms", "リモートPC接続済み · %d ms"),
+        "원격 PC 확인 중…": ("Checking the remote PC…", "リモートPCを確認中…"),
+        "원격 PC에 연결할 수 없습니다": ("Can't reach the remote PC", "リモートPCに接続できません"),
+        "시작 메뉴 열기 (⌥Space)": ("Open Start Menu (⌥Space)", "スタートメニューを開く (⌥Space)"),
+        "지금 다시 연결": ("Reconnect Now", "今すぐ再接続"),
+        "kkguai 열기": ("Open kkguai", "kkguaiを開く"),
+        "연결됨 · %d ms": ("Connected · %d ms", "接続済み · %d ms"),
+        "원격 PC 도달 가능 · %d ms": ("Remote PC reachable · %d ms", "リモートPC応答あり · %d ms"),
+        "연결되지 않음": ("Not connected", "未接続"),
+        "대기 중": ("Waiting", "待機中"),
     ]
 }
 
@@ -361,5 +373,15 @@ private enum Chinese {
         "원격 PC 다시 시작…": "重启远程电脑…",
         "원격 PC 시스템 종료…": "关闭远程电脑…",
         "Windows 앱": "Windows 应用",
+        "원격 PC 연결됨 · %d ms": "已连接远程电脑 · %d ms",
+        "원격 PC 확인 중…": "正在检查远程电脑…",
+        "원격 PC에 연결할 수 없습니다": "无法连接远程电脑",
+        "시작 메뉴 열기 (⌥Space)": "打开开始菜单（⌥Space）",
+        "지금 다시 연결": "立即重新连接",
+        "kkguai 열기": "打开 kkguai",
+        "연결됨 · %d ms": "已连接 · %d ms",
+        "원격 PC 도달 가능 · %d ms": "远程电脑可达 · %d ms",
+        "연결되지 않음": "未连接",
+        "대기 중": "等待中",
     ]
 }
