@@ -4,7 +4,7 @@
 
 [中文](#中文) · [English](#english)
 
-> **下载 / Download:** [kkguai 0.1.1 · Apple Silicon · macOS 14+](https://github.com/kkguai666/kkguai/releases/latest)
+> **下载 / Download:** [kkguai 0.1.1 · .dmg · Apple Silicon · macOS 14+](https://github.com/kkguai666/kkguai/releases/latest)
 
 ---
 
@@ -42,8 +42,8 @@ kkguai 是一款 macOS 上的 RDP RemoteApp 客户端。它连接你已有的 Wi
 
 ### 安装
 
-1. 从 [Releases](https://github.com/kkguai666/kkguai/releases/latest) 下载 `kkguai-*-macos-arm64.zip`。
-2. 解压，把 `kkguai.app` 拖进「应用程序」。
+1. 从 [Releases](https://github.com/kkguai666/kkguai/releases/latest) 下载 `kkguai-*-macos-arm64.dmg`。
+2. 打开磁盘映像，把 `kkguai.app` 拖进「应用程序」，然后推出磁盘映像。
 3. 发布包尚未经过 Apple 公证，首次打开前执行一次：
 
    ```bash
@@ -111,8 +111,8 @@ kkguai is a RemoteApp (RDP) client for macOS. It connects to a Windows PC you al
 
 ### Install
 
-1. Download `kkguai-*-macos-arm64.zip` from [Releases](https://github.com/kkguai666/kkguai/releases/latest).
-2. Unzip and drag `kkguai.app` into Applications.
+1. Download `kkguai-*-macos-arm64.dmg` from [Releases](https://github.com/kkguai666/kkguai/releases/latest).
+2. Open the disk image, drag `kkguai.app` into Applications, then eject the image.
 3. The build is not notarized by Apple yet. Before the first launch, run once:
 
    ```bash
