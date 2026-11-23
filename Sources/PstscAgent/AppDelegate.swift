@@ -37,6 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     /// Set when the user signs out of / shuts down the remote PC from the power menu: no auto-reconnect.
     private var userEndedRemoteSession = false
     private var reconnectWork: DispatchWorkItem?
+    /// 上次会话已经还原过，不再重复打开。
+    private var restoredLastSession = false
     private var connectProgressTimer: Timer?
     private var connectElapsed = 0
     private var resumingConnection = false
@@ -288,6 +290,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         updateToggleItems()
     }
 
+    /// 菜单栏里点某个远程窗口：切到前台，同时让 Windows 那边也把它激活。
+    @objc private func focusRemoteWindow(_ sender: NSMenuItem) {
+        guard let number = sender.representedObject as? NSNumber,
+              let window = windowManager?.windows[number.uint32Value] else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        windowManager?.bringToFront(window)
+    }
+
     @objc private func showLauncher() {
         NSApp.activate(ignoringOtherApps: true)
         if mode == .apps, ready {
@@ -339,6 +349,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         let cut = menu.addItem(withTitle: L("연결 끊기"), action: #selector(disconnect), keyEquivalent: "")
         cut.target = self
         cut.isEnabled = session != nil || reconnectWork != nil
+
+        // 正在运行的程序直接列出来：不用打开主窗口就能切过去或关掉。
+        let openWindows = (windowManager?.appWindows ?? []).filter { $0.isVisible && !$0.info.isPopup }
+        if !openWindows.isEmpty {
+            menu.addItem(.separator())
+            let headerItem = NSMenuItem(title: L("열린 원격 창"), action: nil, keyEquivalent: "")
+            headerItem.isEnabled = false
+            menu.addItem(headerItem)
+            for window in openWindows.prefix(10) {
+                let title = window.info.title.isEmpty ? L("(제목 없음)") : window.info.title
+                let item = menu.addItem(withTitle: title, action: #selector(focusRemoteWindow(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = NSNumber(value: window.info.id)
+            }
+        }
         menu.addItem(.separator())
         let open = menu.addItem(withTitle: L("kkguai 열기"), action: #selector(showConnectWindow), keyEquivalent: "")
         open.target = self
@@ -420,6 +445,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         let delay = reconnectAttempts < delays.count ? delays[reconnectAttempts] : 60
         reconnectAttempts += 1
         NSApp.dockTile.badgeLabel = "↻"
+        // 菜单栏和连接窗口都显示还要等多久，用户才知道该不该手动干预。
+        statusItem.update(state: watchdog.state, connected: false)
+        connectWindow.setBusy(true, status: DropExplanation.retryText(seconds: Int(delay), attempt: reconnectAttempts))
         FileHandle.standardError.write(Data("[pstsc] reconnecting in \(Int(delay))s (attempt \(reconnectAttempts))\n".utf8))
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.credentials != nil, self.session == nil else { return }
@@ -450,6 +478,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        // 退出前记下还开着的程序，下次连同一台电脑时自动打开。
+        if let host = credentials?.host {
+            WorkspaceStore.rememberLastSession(host: host, appIDs: runningAppIDs())
+        }
         watchdog.stop()
         session?.disconnect()
         programs.reset()
@@ -782,6 +814,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         if let app = pendingLaunch {
             pendingLaunch = nil
             session.launch(appID: app.appID)
+        } else if mode == .apps, !restoredLastSession, let host = credentials?.host,
+                  let ids = WorkspaceStore.lastSession(for: host) {
+            // 上次关掉 app 时开着的程序，这次自动打开。只做一次，之后用户自己关掉的不会复活。
+            restoredLastSession = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self, self.session != nil, self.ready else { return }
+                let known = Set(self.catalog.apps.map(\.appID))
+                for appID in ids where known.contains(appID) {
+                    self.launch(self.remoteApp(forID: appID))
+                }
+            }
         }
     }
 
@@ -844,7 +887,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             updateToggleItems()
             connectWindow.setBusy(false, status: L("비밀번호 또는 계정을 확인하세요.") + (message.map { " (\($0))" } ?? ""))
         default:
-            connectWindow.setBusy(false, status: message.map { L("연결 끊김: %@", $0) } ?? L("연결이 끊겼습니다."))
+            // 说清楚是哪种断开、下一步做什么，比只报「连接断开了」有用。
+            connectWindow.setBusy(false, status: DropExplanation.text(for: reason))
         }
         stopReconnecting()
         pendingLaunch = nil
@@ -1308,6 +1352,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         let move = menu.addItem(withTitle: L("다음 화면으로 이동"), action: #selector(moveRemoteToNextDisplay), keyEquivalent: "")
         move.target = self
         move.isEnabled = NSScreen.screens.count > 1
+        // 报障和沟通时经常要把窗口标题发给别人，从菜单里复制比手打准。
+        let copyTitle = menu.addItem(withTitle: L("复制窗口标题"), action: #selector(copyRemoteWindowTitle), keyEquivalent: "")
+        copyTitle.target = self
+        copyTitle.isEnabled = activeRemoteWindow != nil
+        // 开了十几个远程窗口之后，一键全收起来比一个个点快。
+        let minimizeAll = menu.addItem(withTitle: L("全部最小化"), action: #selector(minimizeAllRemoteWindows), keyEquivalent: "")
+        minimizeAll.target = self
+        minimizeAll.isEnabled = !(windowManager?.appWindows ?? []).filter(\.isVisible).isEmpty
+        let restoreAll = menu.addItem(withTitle: L("全部恢复"), action: #selector(restoreAllRemoteWindows), keyEquivalent: "")
+        restoreAll.target = self
+        restoreAll.isEnabled = !(windowManager?.appWindows ?? []).isEmpty
         menu.addItem(.separator())
         let windows = windowManager?.appWindows ?? []
         if windows.isEmpty {
@@ -1345,6 +1400,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     @objc private func moveRemoteToNextDisplay() {
         guard let window = activeRemoteWindow else { return }
         window.moveToNextDisplay()
+    }
+
+    @objc private func minimizeAllRemoteWindows() {
+        guard let session, let manager = windowManager else { return }
+        for window in manager.appWindows where window.isVisible && !window.info.isPopup {
+            session.command(windowId: window.remoteId, RDPSession.commandMinimize)
+        }
+    }
+
+    @objc private func restoreAllRemoteWindows() {
+        guard let session, let manager = windowManager else { return }
+        for window in manager.appWindows where !window.info.isPopup {
+            session.command(windowId: window.remoteId, RDPSession.commandRestore)
+        }
+    }
+
+    @objc private func copyRemoteWindowTitle() {
+        guard let window = activeRemoteWindow else { return }
+        let title = window.info.title.isEmpty ? L("(제목 없음)") : window.info.title
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(title, forType: .string)
     }
 
     @objc private func showRemoteWindow(_ sender: NSMenuItem) {

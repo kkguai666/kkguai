@@ -303,13 +303,14 @@ final class StartMenuController: NSWindowController, NSTextFieldDelegate, NSTabl
             listTitle.stringValue = L("검색 결과")
             backButton.isHidden = true
             let query = searchField.stringValue.trimmingCharacters(in: .whitespaces)
-            let matches = catalog.apps.filter { $0.name.localizedCaseInsensitiveContains(query) }
-            // Names that start with the query first, like Windows' best match.
-            let ranked = matches.sorted {
-                let a = $0.name.trimmed.lowercased().hasPrefix(query.lowercased())
-                let b = $1.name.trimmed.lowercased().hasPrefix(query.lowercased())
-                return a != b ? a : $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            // 子串、拼音全拼、拼音首字母都算命中（见 SearchMatcher）。
+            let scored: [(app: RemoteApp, score: Int)] = catalog.apps.compactMap { app in
+                SearchMatcher.score(name: app.name, query: query).map { (app, $0) }
             }
+            let ranked = scored.sorted {
+                $0.score != $1.score ? $0.score < $1.score
+                    : $0.app.name.localizedStandardCompare($1.app.name) == .orderedAscending
+            }.map(\.app)
             let commands = (paletteCommands?() ?? []).filter {
                 $0.title.localizedCaseInsensitiveContains(query)
             }

@@ -10,6 +10,37 @@ struct Workspace: Codable {
 
 enum WorkspaceStore {
     private static let key = "workspaces"
+    private static let lastSessionKey = "lastSession"
+
+    /// 上次关掉 app 时还开着的程序。用户每天开同样的几个程序，重连后手动一个个点太蠢。
+    /// 和命名工作区分开存：它会被自动覆盖，不该出现在工作区菜单里。
+    struct LastSession: Codable {
+        var host: String
+        var appIDs: [String]
+    }
+
+    static func rememberLastSession(host: String, appIDs: [String]) {
+        guard !appIDs.isEmpty else {
+            UserDefaults.standard.removeObject(forKey: lastSessionKey)
+            return
+        }
+        let session = LastSession(host: host, appIDs: appIDs)
+        if let data = try? JSONEncoder().encode(session) {
+            UserDefaults.standard.set(data, forKey: lastSessionKey)
+        }
+    }
+
+    static func lastSession(for host: String) -> [String]? {
+        guard let data = UserDefaults.standard.data(forKey: lastSessionKey),
+              let session = try? JSONDecoder().decode(LastSession.self, from: data),
+              session.host.caseInsensitiveCompare(host) == .orderedSame,
+              !session.appIDs.isEmpty else { return nil }
+        return session.appIDs
+    }
+
+    static func forgetLastSession() {
+        UserDefaults.standard.removeObject(forKey: lastSessionKey)
+    }
 
     static func all() -> [Workspace] {
         guard let data = UserDefaults.standard.data(forKey: key),

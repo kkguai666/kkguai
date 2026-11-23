@@ -53,6 +53,11 @@ enum Diagnostics {
         }
         let peers = TailscalePeers.onlinePeers()
         lines.append("Tailscale peers: \(peers.isEmpty ? "none" : peers.map(\.name).joined(separator: ", "))")
+        // 排障时最常被问的两件事：现在有没有网、那台电脑通不通。写进诊断就不用反复追问。
+        lines.append("Network: \(NetworkState.summary())")
+        if let host = extra["Host"], !host.isEmpty, host != "(none)" {
+            lines.append("Probe: \(NetworkState.reachability(host: host))")
+        }
         if !extra.isEmpty {
             lines.append("")
             lines.append("State:")

@@ -1,4 +1,5 @@
 import AppKit
+import Network
 
 /// 新用户装上以后看到的第一个东西。没有它，用户只能看到一个要填 IP 和密码的窗口，
 /// 却不知道那台 Windows 得先开 RemoteApp——这是绝大多数人第一次用就放弃的地方。
@@ -59,7 +60,7 @@ final class FirstRunWindowController: NSWindowController {
             number: "3",
             title: L("연결되면 원격 프로그램이 Launchpad에 나타납니다"),
             detail: L("각 원격 프로그램은 ~/Applications/kkguai에 런처가 생기고, ⌥Space로 원격 시작 메뉴를 열 수 있습니다."),
-            actions: []))
+            actions: [(L("连不上？先测一下"), #selector(diagnose))]))
 
         let skip = NSButton(title: L("나중에"), target: self, action: #selector(skip))
         skip.bezelStyle = .rounded
@@ -159,6 +160,64 @@ final class FirstRunWindowController: NSWindowController {
 
     @objc private func openGuide() {
         open(FirstRun.siteURL + "/remoteapp-guide.html")
+    }
+
+    /// 连不上时最常见的三种原因：地址错、3389 没开、Windows 那边没开 RemoteApp。
+    /// 这里让用户直接输入地址测一次，比让他去读排障文档快。
+    @objc private func diagnose() {
+        let alert = NSAlert()
+        alert.messageText = L("测一下能不能连上")
+        alert.informativeText = L("输入那台 Windows 的地址，点「测试」。这一步只检查 3389 端口通不通，不会登录。")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        field.placeholderString = "192.168.1.20"
+        alert.accessoryView = field
+        alert.addButton(withTitle: L("测试"))
+        alert.addButton(withTitle: L("取消"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let host = field.stringValue.trimmingCharacters(in: .whitespaces)
+        guard !host.isEmpty else { return }
+
+        let result = NSAlert()
+        result.messageText = L("正在测试 %@ …", host)
+        result.addButton(withTitle: L("好"))
+        // 结果要等探测回来，先显示一个进行中的对话框，回来再改文案。
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.probe(host: host) { ok, detail in
+                result.messageText = ok ? L("%@ 可以连上", host) : L("%@ 连不上", host)
+                result.informativeText = detail
+            }
+            result.runModal()
+        }
+    }
+
+    /// 一次 TCP 握手，只回答「通不通、多久」，不涉及账号。
+    private func probe(host: String, completion: @escaping (Bool, String) -> Void) {
+        let start = Date()
+        let connection = NWConnection(host: NWEndpoint.Host(host),
+                                      port: NWEndpoint.Port(rawValue: 3389) ?? 3389,
+                                      using: .tcp)
+        var done = false
+        let finish: (Bool) -> Void = { ok in
+            DispatchQueue.main.async {
+                guard !done else { return }
+                done = true
+                connection.cancel()
+                let ms = Int(Date().timeIntervalSince(start) * 1000)
+                completion(ok, ok
+                    ? L("3389 端口通了，%d ms。可以回去填地址和账号了。", Int32(ms))
+                    : L("3389 端口不通。确认地址没打错、那台电脑开着、防火墙放行 3389、并且已经运行过 enable-remoteapp.reg。"))
+            }
+        }
+        connection.stateUpdateHandler = { state in
+            switch state {
+            case .ready: finish(true)
+            case .failed, .cancelled: finish(false)
+            default: break
+            }
+        }
+        connection.start(queue: .global(qos: .utility))
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { finish(false) }
     }
 
     @objc private func scanHint() {

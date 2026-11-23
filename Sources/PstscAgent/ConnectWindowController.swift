@@ -190,8 +190,21 @@ final class ConnectWindowController: NSWindowController {
         for entry in recents {
             guard let host = entry["host"] else { continue }
             let user = entry["user"] ?? ""
-            profilePopUp.addItem(withTitle: user.isEmpty ? host : "\(user) @ \(host)")
+            let title = user.isEmpty ? host : "\(user) @ \(host)"
+            profilePopUp.addItem(withTitle: title)
             profilePopUp.lastItem?.representedObject = [host, user]
+        }
+        // 换一台电脑时，旧的那条不该丢。给每台都留一个删除项，列表才不会越用越长。
+        if !recents.isEmpty {
+            profilePopUp.menu?.addItem(.separator())
+            for entry in recents {
+                guard let host = entry["host"] else { continue }
+                let title = L("从列表移除 %@", host)
+                let item = NSMenuItem(title: title, action: #selector(removeRecent(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = host
+                profilePopUp.menu?.addItem(item)
+            }
         }
         if !discovered.isEmpty {
             if !recents.isEmpty { profilePopUp.menu?.addItem(.separator()) }
@@ -206,6 +219,15 @@ final class ConnectWindowController: NSWindowController {
         }
         // Do not land on the disabled "On This Network" header when there are no recent PCs.
         profilePopUp.selectItem(at: recents.isEmpty ? 1 : 0)
+    }
+
+    @objc private func removeRecent(_ sender: NSMenuItem) {
+        guard let host = sender.representedObject as? String else { return }
+        let defaults = UserDefaults.standard
+        var list = (defaults.array(forKey: Key.recent) as? [[String: String]]) ?? []
+        list.removeAll { $0["host"]?.caseInsensitiveCompare(host) == .orderedSame }
+        defaults.set(list, forKey: Key.recent)
+        reloadProfiles()
     }
 
     @objc private func profileChosen() {
