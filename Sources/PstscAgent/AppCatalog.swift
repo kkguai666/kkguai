@@ -21,8 +21,15 @@ final class AppCatalog {
     /// Called about once a second while icons download, so the UI can show progress.
     var onIconsProgress: (() -> Void)?
 
-    static let supportFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Pstsc", isDirectory: true)
+    /// kkguai 的数据目录。设 KKGUAI_SUPPORT 可以指到别处，用来在不碰真实数据的前提下
+    /// 跑一个隔离实例做自测（缓存、启动器、崩溃标记都在这个目录下面）。
+    static let supportFolder: URL = {
+        if let override = ProcessInfo.processInfo.environment["KKGUAI_SUPPORT"], !override.isEmpty {
+            return URL(fileURLWithPath: override, isDirectory: true)
+        }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Pstsc", isDirectory: true)
+    }()
     static let sharedFolder = supportFolder.appendingPathComponent("share", isDirectory: true)
     private static let exportFile = sharedFolder.appendingPathComponent("apps.json")
     private static let cacheFolder = supportFolder.appendingPathComponent("catalog", isDirectory: true)

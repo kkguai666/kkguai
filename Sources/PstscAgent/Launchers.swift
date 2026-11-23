@@ -1,13 +1,42 @@
 import AppKit
 import CryptoKit
 
-/// Puts one small launcher app per remote Start menu entry into ~/Applications/Pstsc 앱/, so remote
+/// Puts one small launcher app per remote Start menu entry into ~/Applications/kkguai/, so remote
 /// programs show up in Launchpad and Spotlight like Parallels' "Windows Applications" folder.
-/// A launcher is a copy of PstscDockProxy in launcher mode: it asks Pstsc to start the app
-/// (opening Pstsc first if needed) and quits.
+/// A launcher is a copy of PstscDockProxy in launcher mode: it asks kkguai to start the app
+/// (opening kkguai first if needed) and quits.
 final class LauncherController {
-    static let folder = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Applications/Pstsc 앱", isDirectory: true)
+    /// 用户的主目录。KKGUAI_HOME 可以把整个 ~/Applications 指到临时目录，
+    /// 这样跑隔离实例时不会动到用户真实的 Launchpad 文件夹。
+    static var home: URL {
+        if let override = ProcessInfo.processInfo.environment["KKGUAI_HOME"], !override.isEmpty {
+            return URL(fileURLWithPath: override, isDirectory: true)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+    }
+    static var folder: URL { home.appendingPathComponent("Applications/kkguai", isDirectory: true) }
+
+    /// 早期版本把启动器放在 ~/Applications/Pstsc 앱/。用户每次打开 Launchpad 都会看到这个
+    /// 韩文目录名，所以改成 kkguai，并把老目录整体搬过来，不留下第二个文件夹。
+    /// `in` 只给自检用；正常调用走真实主目录。
+    static func migrateLegacyFolder(in root: URL? = nil) {
+        let fm = FileManager.default
+        let base = root ?? home
+        let legacy = base.appendingPathComponent("Applications/Pstsc 앱", isDirectory: true)
+        let target = base.appendingPathComponent("Applications/kkguai", isDirectory: true)
+        guard fm.fileExists(atPath: legacy.path) else { return }
+        if !fm.fileExists(atPath: target.path) {
+            try? fm.moveItem(at: legacy, to: target)
+            return
+        }
+        // 两个都在：把老目录里新目录没有的启动器补过去，然后删掉老目录。
+        let existing = Set((try? fm.contentsOfDirectory(atPath: target.path)) ?? [])
+        for item in (try? fm.contentsOfDirectory(atPath: legacy.path)) ?? [] where !existing.contains(item) {
+            try? fm.moveItem(at: legacy.appendingPathComponent(item),
+                             to: target.appendingPathComponent(item))
+        }
+        try? fm.removeItem(at: legacy)
+    }
 
     private let queue = DispatchQueue(label: "pstsc.launchers", qos: .utility)
     private var syncing = false

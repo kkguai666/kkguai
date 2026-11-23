@@ -33,7 +33,9 @@ func L(_ korean: String, _ arguments: CVarArg...) -> String {
     return arguments.isEmpty ? text : String(format: text, arguments: arguments)
 }
 
-private enum Translations {
+enum Translations {
+    static var allKeys: [String] { Array(table.keys) }
+
     static let table: [String: (en: String, ja: String)] = [
         // Connect window
         "kkguai — 원격 PC 연결": ("kkguai — Connect to Remote PC", "kkguai — リモート PC に接続"),
@@ -91,7 +93,6 @@ private enum Translations {
         "업데이트를 확인하지 못했습니다.": ("Couldn't check for updates.", "アップデートを確認できませんでした。"),
         "새 버전 %@ 사용 가능": ("Version %@ is available", "新バージョン %@ が利用可能"),
         "다운로드 및 설치": ("Download and Install", "ダウンロードしてインストール"),
-        "나중에": ("Later", "後で"),
         "다운로드 중… %d%%": ("Downloading… %d%%", "ダウンロード中… %d%%"),
         "업데이트를 설치하지 못했습니다.": ("Couldn't install the update.", "アップデートをインストールできませんでした。"),
         "%@ 설치를 위해 다시 시작합니다.": ("Restarting to install %@.", "インストールのため再起動します。"),
@@ -133,7 +134,6 @@ private enum Translations {
         "다시 연결하는 중… (취소)": ("Reconnecting… (Cancel)", "再接続中…(キャンセル)"),
 
         // Dialogs
-        "확인": ("OK", "OK"),
         "취소": ("Cancel", "キャンセル"),
         "실행": ("Run", "実行"),
         "원격 PC에서 로그아웃할까요?": ("Sign out of the remote PC?", "リモート PC からサインアウトしますか?"),
@@ -246,7 +246,6 @@ private enum Translations {
         "다음 화면으로 이동": ("Move to Next Screen", "次の画面へ移動"),
         "저장된 PC": ("Saved PCs", "保存したPC"),
         "저장된 PC 없음": ("No saved PCs", "保存したPCはありません"),
-        "네트워크에서 찾기": ("Find on Network", "ネットワークで探す"),
         "검색 중…": ("Searching…", "検索中…"),
         "이 네트워크에서": ("On This Network", "このネットワーク上"),
         "3389 포트를 여는 PC를 찾지 못했습니다.": ("No PC with port 3389 responded.", "ポート3389が開いているPCが見つかりませんでした。"),
@@ -279,11 +278,27 @@ private enum Translations {
         "절전 (정적인 앱)": ("Power saver (static apps)", "省電力 (静的なアプリ)"),
         "열 때 항상 위에 두기": ("Keep on top when opened", "開いたとき常に最前面"),
         "기본값으로 되돌리기": ("Reset to defaults", "既定値に戻す"),
+        // First run
+        "kkguai에 오신 것을 환영합니다": ("Welcome to kkguai", "kkguaiへようこそ"),
+        "다른 Windows PC의 프로그램을 맥의 독립된 창으로. 세 단계면 됩니다.": ("Turn programs on another Windows PC into separate Mac windows. Three steps.", "別の Windows PC のプログラムを Mac の独立したウィンドウに。3ステップで完了。"),
+        "그 Windows PC에서 RemoteApp 켜기": ("Turn on RemoteApp on that Windows PC", "その Windows PC で RemoteApp を有効にする"),
+        "Windows 10/11 Pro, Enterprise 또는 Server가 필요합니다. Home은 안 됩니다. enable-remoteapp.reg를 실행한 뒤 한 번 재시작하세요.": ("Needs Windows 10/11 Pro, Enterprise or Server - Home won't work. Run enable-remoteapp.reg, then restart once.", "Windows 10/11 Pro、Enterprise または Server が必要です(Home は不可)。enable-remoteapp.reg を実行してから一度再起動してください。"),
+        "enable-remoteapp.reg 내려받기": ("Download enable-remoteapp.reg", "enable-remoteapp.reg をダウンロード"),
+        "그림 가이드 보기": ("Open the illustrated guide", "図解ガイドを見る"),
+        "돌아와서 그 PC의 주소와 계정 입력": ("Come back and enter that PC's address and account", "戻ってきてその PC のアドレスとアカウントを入力"),
+        "주소는 그 Windows의 LAN IP입니다(예: 192.168.1.20). 두 기기가 같은 네트워크에 있거나 VPN으로 연결돼 있어야 합니다.": ("The address is that Windows PC's LAN IP (e.g. 192.168.1.20). Both machines must share a network, or be joined by VPN.", "アドレスはその Windows の LAN IP です(例: 192.168.1.20)。2 台が同じネットワークにあるか、VPN でつながっている必要があります。"),
+        "연결되면 원격 프로그램이 Launchpad에 나타납니다": ("Once connected, remote programs appear in Launchpad", "接続すると、リモートプログラムが Launchpad に表示されます"),
+        "각 원격 프로그램은 ~/Applications/kkguai에 런처가 생기고, ⌥Space로 원격 시작 메뉴를 열 수 있습니다.": ("Each remote program gets a launcher in ~/Applications/kkguai, and ⌥Space opens the remote Start menu.", "各リモートプログラムは ~/Applications/kkguai にランチャーが作られ、⌥Space でリモートのスタートメニューを開けます。"),
+        "연결 시작": ("Start Connecting", "接続を開始"),
+        "그 PC의 주소를 모르시나요?": ("Don't know that PC's address?", "その PC のアドレスがわかりませんか?"),
+        "'연결 시작' 후 연결 창에서 '네트워크에서 찾기'를 누르면 같은 네트워크에서 3389 포트가 열린 PC를 찾습니다.": ("After Start Connecting, press Find on Network in the connect window; it scans the local network for PCs with port 3389 open.", "「接続を開始」の後、接続ウィンドウの「ネットワークで探す」を押すと、同じネットワークで 3389 番ポートが開いている PC を探します。"),
     ]
 }
 
 /// Simplified Chinese translations, keyed by the same Korean source strings.
-private enum Chinese {
+enum Chinese {
+    static var allKeys: [String] { Array(table.keys) }
+
     static let table: [String: String] = [
         "kkguai — 원격 PC 연결": "kkguai — 连接到远程电脑",
         "시작 메뉴 (어디서나 ⌥Space)": "开始菜单（任意位置 ⌥Space）",
@@ -324,7 +339,6 @@ private enum Chinese {
         "업데이트를 확인하지 못했습니다.": "无法检查更新。",
         "새 버전 %@ 사용 가능": "发现新版本 %@",
         "다운로드 및 설치": "下载并安装",
-        "나중에": "稍后",
         "다운로드 중… %d%%": "正在下载… %d%%",
         "업데이트를 설치하지 못했습니다.": "无法安装更新。",
         "%@ 설치를 위해 다시 시작합니다.": "正在重启以安装 %@。",
@@ -360,7 +374,6 @@ private enum Chinese {
         " (최소화됨)": "（已最小化）",
         "원격 PC 연결…": "连接到远程电脑…",
         "다시 연결하는 중… (취소)": "正在重新连接…（取消）",
-        "확인": "好",
         "취소": "取消",
         "실행": "运行",
         "원격 PC에서 로그아웃할까요?": "要注销远程电脑吗？",
@@ -426,7 +439,6 @@ private enum Chinese {
         "다음 화면으로 이동": "移到下一个屏幕",
         "저장된 PC": "已保存的电脑",
         "저장된 PC 없음": "没有已保存的电脑",
-        "네트워크에서 찾기": "在网络中查找",
         "검색 중…": "搜索中…",
         "이 네트워크에서": "在此网络中",
         "3389 포트를 여는 PC를 찾지 못했습니다.": "没有找到开放 3389 端口的电脑。",
@@ -454,5 +466,19 @@ private enum Chinese {
         "절전 (정적인 앱)": "省电（静态应用）",
         "열 때 항상 위에 두기": "打开时保持最前面",
         "기본값으로 되돌리기": "恢复默认",
+        // First run
+        "kkguai에 오신 것을 환영합니다": "欢迎使用 kkguai",
+        "다른 Windows PC의 프로그램을 맥의 독립된 창으로. 세 단계면 됩니다.": "把另一台 Windows 电脑上的程序，变成 Mac 上的独立窗口。三步就能用上。",
+        "그 Windows PC에서 RemoteApp 켜기": "在那台 Windows 上开启 RemoteApp",
+        "Windows 10/11 Pro, Enterprise 또는 Server가 필요합니다. Home은 안 됩니다. enable-remoteapp.reg를 실행한 뒤 한 번 재시작하세요.": "需要 Windows 10/11 专业版、企业版或 Server，家庭版不行。运行 enable-remoteapp.reg 后重启一次。",
+        "enable-remoteapp.reg 내려받기": "下载 enable-remoteapp.reg",
+        "그림 가이드 보기": "查看图文指南",
+        "돌아와서 그 PC의 주소와 계정 입력": "回到这里，填那台电脑的地址和账号",
+        "주소는 그 Windows의 LAN IP입니다(예: 192.168.1.20). 두 기기가 같은 네트워크에 있거나 VPN으로 연결돼 있어야 합니다.": "地址就是那台 Windows 的局域网 IP，比如 192.168.1.20。两台机器要在同一个网络里，或者已经通了 VPN。",
+        "연결되면 원격 프로그램이 Launchpad에 나타납니다": "连上之后，远程程序会出现在 Launchpad",
+        "각 원격 프로그램은 ~/Applications/kkguai에 런처가 생기고, ⌥Space로 원격 시작 메뉴를 열 수 있습니다.": "每个远程程序都会在 ~/Applications/kkguai 里有一个启动器，也可以按 ⌥Space 打开远程开始菜单。",
+        "연결 시작": "开始连接",
+        "그 PC의 주소를 모르시나요?": "不知道那台电脑的地址？",
+        "'연결 시작' 후 연결 창에서 '네트워크에서 찾기'를 누르면 같은 네트워크에서 3389 포트가 열린 PC를 찾습니다.": "点「开始连接」后，在连接窗口里点「在网络中查找」，它会扫描同一网络里开着 3389 端口的电脑。",
     ]
 }

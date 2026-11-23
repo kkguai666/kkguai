@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
     private var notificationsEnabled = false
 
     private let connectWindow = ConnectWindowController()
+    private let firstRunWindow = FirstRunWindowController()
     private let catalog = AppCatalog()
     private let appIcons = AppIconStore()
     private let startPrefs = StartMenuPrefs()
@@ -76,6 +77,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Diagnostics.installLogCapture()
+        // 老版本把启动器放在 ~/Applications/Pstsc 앱/，用户天天在 Launchpad 里看到这个韩文名。
+        LauncherController.migrateLegacyFolder()
         UserDefaults.standard.register(defaults: [Pref.shareHome: true, Pref.shareClipboard: true])
         NSApp.applicationIconImage = DockIcon.make()
         buildMenus()
@@ -160,6 +163,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
             // These worked before: if the network is not up yet (e.g. right after Mac login), keep retrying.
             hasBeenReady = true
             connect(mode: .apps)
+        } else if FirstRun.needed {
+            // 新用户先看一页说明：不知道 Windows 那边要先开 RemoteApp 的人，第一步就会卡住。
+            firstRunWindow.onStart = { [weak self] in
+                UserDefaults.standard.set(true, forKey: FirstRun.completedKey)
+                self?.connectWindow.showWindow(nil)
+                NSApp.activate()
+            }
+            firstRunWindow.onSkip = { [weak self] in
+                self?.connectWindow.showWindow(nil)
+                NSApp.activate()
+            }
+            firstRunWindow.showWindow(nil)
+            NSApp.activate()
         } else {
             connectWindow.showWindow(nil)
             NSApp.activate()
@@ -437,6 +453,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, RDPSessionDelegate, NS
         watchdog.stop()
         session?.disconnect()
         programs.reset()
+        CrashGuard.endCleanly()
     }
 
     private func setUpProgramDock() {

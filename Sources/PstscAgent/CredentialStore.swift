@@ -29,7 +29,7 @@ enum CredentialStore {
         SecItemDelete(query as CFDictionary)
         var item = query
         item[kSecValueData as String] = Data(credentials.password.utf8)
-        item[kSecAttrLabel as String] = "Pstsc — \(credentials.host)"
+        item[kSecAttrLabel as String] = "kkguai — \(credentials.host)"
         let saved = SecItemAdd(item as CFDictionary, nil) == errSecSuccess
         UserDefaults.standard.set(saved, forKey: Key.autoConnect)
     }

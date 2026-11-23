@@ -6,6 +6,8 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+# 本地化表有重复键时 Swift 不报错，运行时才 trap（0.2.2 中文界面就是这么崩的），构建前先查。
+python3 scripts/check-localization.py
 deps="build/deps/freerdp"
 [ -f "$deps/lib/libfreerdp0.0.1.1.dylib" ] || scripts/build-freerdp.sh
 swift build -c release
@@ -49,8 +51,8 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 	<key>CFBundleExecutable</key><string>PstscAgent</string>
 	<key>CFBundleIconFile</key><string>AppIcon</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>0.3.0</string>
-	<key>CFBundleVersion</key><string>16</string>
+	<key>CFBundleShortVersionString</key><string>0.3.1</string>
+	<key>CFBundleVersion</key><string>17</string>
 	<key>LSMinimumSystemVersion</key><string>14.0</string>
 	<key>NSHighResolutionCapable</key><true/>
 </dict>

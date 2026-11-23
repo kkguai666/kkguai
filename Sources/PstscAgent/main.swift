@@ -16,6 +16,7 @@ final class PstscApplication: NSApplication {
 /// (ERRINFO_RPC_INITIATED_DISCONNECT), so only one may run. The lock is released when the process exits.
 private func acquireSingleInstanceLock() -> Bool {
     try? FileManager.default.createDirectory(at: AppCatalog.supportFolder, withIntermediateDirectories: true)
+    // 锁也放在 support 目录下：KKGUAI_SUPPORT 指向别处时，隔离实例不会和真实实例抢同一把锁。
     let path = AppCatalog.supportFolder.appendingPathComponent("agent.lock").path
     let fd = open(path, O_CREAT | O_RDWR, 0o600)
     return fd >= 0 && flock(fd, LOCK_EX | LOCK_NB) == 0
@@ -43,10 +44,20 @@ if let flag = CommandLine.arguments.firstIndex(of: "--write-iconset"), CommandLi
     exit(0)
 }
 
+/// `PstscAgent --self-test`：不开窗口、不连远程，只跑那些一旦写错就会在用户机器上崩掉、
+/// 而编译期又查不出来的路径。0.2.2 的中文界面崩溃（Localization 表重复键）就属于这一类。
+if CommandLine.arguments.contains("--self-test") {
+    SelfTest.run()
+    exit(0)
+}
+
 guard acquireSingleInstanceLock() else {
     FileHandle.standardError.write(Data("[pstsc] Pstsc is already running; quit the other instance first.\n".utf8))
     exit(1)
 }
+
+// 崩溃后自动重启一次。必须在 AppKit 起来之前装好处理器，否则启动阶段的崩溃拦不到。
+CrashGuard.begin()
 
 /// Copies everything written to stderr (our logs and FreeRDP's) into ~/Library/Logs/Pstsc/agent.log
 /// while still passing it through, so a run started from Finder or another terminal can be inspected.
