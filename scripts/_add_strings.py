@@ -31,7 +31,9 @@ def main(path):
     j = s.index('\n    ]', i)
     s = s[:j] + '\n' + block_zh.rstrip('\n') + s[j:]
 
-    io.open(p, 'w', encoding='utf-8').write(s)
+    # newline='' 才不会在 Windows 上把 \n 写成 \r\n，否则整个文件的 diff 全变。
+    with io.open(p, 'w', encoding='utf-8', newline='') as handle:
+        handle.write(s)
     print("加了 %d 条" % len(rows))
 
 
